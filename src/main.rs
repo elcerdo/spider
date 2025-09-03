@@ -29,15 +29,16 @@ fn main() {
 
     app.add_plugins(DefaultPlugins);
     app.add_plugins(ui::UiPlugin);
+    app.add_plugins(ui::TrackSelectionMenuPlugin);
     // app.add_plugins(material::CustomMaterialPlugin);
     // app.add_plugins(global_state::GlobalStatePlugin);
-    // app.add_plugins(ui::TrackSelectionMenuPlugin);
     // app.add_plugins(ui::GameDoneScreenPlugin);
     // app.add_plugins(background::BackgroundPlugin);
     // app.add_plugins(simu::SimuPlugin);
     // app.add_plugins(track::TrackPlugin);
     // app.add_plugins(vehicle::VehiclePlugin);
 
+    /*
     #[cfg(feature = "bevy_dev_tools")]
     {
         // fps overlay
@@ -52,7 +53,6 @@ fn main() {
         });
     }
 
-    /*
     #[cfg(feature = "bevy_dev_tools")]
     {
         // wireframe toggle
