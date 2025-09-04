@@ -1,10 +1,10 @@
 use bevy::asset::Asset;
-use bevy::math::{ops, FloatPow, NormedVectorSpace};
+use bevy::math::{FloatPow, NormedVectorSpace, ops};
 use bevy::math::{Mat2, Vec2, Vec3};
 use bevy::reflect::TypePath;
 use bevy::render::mesh::Mesh;
 
-use kd_tree::{KdPoint, KdTree};
+// use kd_tree::{KdPoint, KdTree};
 
 use std::collections::HashMap;
 
@@ -141,6 +141,7 @@ impl Default for Segment {
     }
 }
 
+/*
 impl KdPoint for Segment {
     type Scalar = f32;
     type Dim = typenum::U4; // 4 dimensional tree.
@@ -192,19 +193,21 @@ pub struct Collision {
     pub transition_kdtree: KdTree<Segment>,
 }
 
+*/
+
 #[derive(Asset, TypePath)]
 pub struct Track {
     pub track: Mesh,
-    pub checkpoint: Mesh,
+    // pub checkpoint: Mesh,
     pub total_length: f32,
-    pub is_looping: bool,
-    pub layer_to_collisions: HashMap<u8, Collision>,
-    pub checkpoint_count: u8,
+    // pub is_looping: bool,
+    // pub layer_to_collisions: HashMap<u8, Collision>,
+    // pub checkpoint_count: u8,
     pub initial_up: Vec3,
-    pub initial_position: Vec3,
-    pub initial_forward: Vec3,
-    pub initial_left: f32,
-    pub initial_right: f32,
+    // pub initial_position: Vec3,
+    // pub initial_forward: Vec3,
+    // pub initial_left: f32,
+    // pub initial_right: f32,
 }
 
 pub fn prepare_track(track_data: &TrackData) -> Track {
@@ -537,7 +540,6 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
     }
 
     use bevy::render::mesh::Indices;
-    use bevy::render::mesh::Mesh;
     use bevy::render::render_asset::RenderAssetUsages;
     use bevy::render::render_resource::PrimitiveTopology;
 
@@ -551,6 +553,8 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
     track = track.with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, track_uvs);
     track = track.with_inserted_attribute(Mesh::ATTRIBUTE_UV_1, track_pqs);
     track = track.with_generated_tangents().unwrap();
+
+    /*
 
     let mut checkpoint = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -583,18 +587,19 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
         let collision = layer_to_collisions.get_mut(&section).unwrap();
         collision.transition_kdtree = KdTree::build_by_ordered_float(transition_segments);
     }
+    */
 
     Track {
         track,
-        checkpoint,
+        // checkpoint,
         total_length: current_length,
-        is_looping,
-        checkpoint_count,
-        layer_to_collisions,
+        // is_looping,
+        // checkpoint_count,
+        // layer_to_collisions,
         initial_up: track_data.initial_up,
-        initial_position: track_data.initial_position,
-        initial_forward: track_data.initial_forward,
-        initial_left: track_data.initial_left,
-        initial_right: track_data.initial_right,
+        // initial_position: track_data.initial_position,
+        // initial_forward: track_data.initial_forward,
+        // initial_left: track_data.initial_left,
+        // initial_right: track_data.initial_right,
     }
 }

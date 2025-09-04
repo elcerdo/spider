@@ -1,6 +1,6 @@
 use crate::global_state::{GlobalState, TRACK_NICKNAMES, TrackNickname};
-// use crate::material::racing_line_material;
-// use crate::track::{Track, TRACK_HANDLES};
+use crate::material::racing_line_material;
+use crate::track::{TRACK_HANDLES, Track};
 
 use super::colors::*;
 
@@ -21,16 +21,17 @@ impl Plugin for TrackSelectionMenuPlugin {
         app.add_systems(OnEnter(GlobalState::TrackSelectionInit), populate_scene);
 
         for track_nickname in TRACK_NICKNAMES {
-            // let state = GlobalState::TrackSelectionHoovered(*track_nickname);
+            let state = GlobalState::TrackSelectionHoovered(*track_nickname);
             let state_ = GlobalState::TrackSelected(*track_nickname);
-            //     app.add_systems(OnEnter(state), update_selected_model);
-            //     app.add_systems(OnEnter(state), update_logo_transform);
+            app.add_systems(OnEnter(state), update_selected_model);
+            app.add_systems(OnEnter(state), update_logo_transform);
             //     app.add_systems(Update, quit_with_escape.run_if(in_state(state)));
             app.add_systems(OnEnter(state_), depopulate_all);
         }
 
-        // app.add_systems(Update, animate_selected_model);
-        // app.add_systems(Update, update_menu);
+        app.add_systems(Update, animate_selected_model);
+        app.add_systems(Update, update_menu);
+
         // app.add_systems(
         //     Update,
         //     quit_with_escape.run_if(in_state(GlobalState::TrackSelectionIdle)),
@@ -49,7 +50,6 @@ impl Plugin for TrackSelectionMenuPlugin {
 #[derive(Component)]
 struct TrackSelectionModelMarker;
 
-/*
 fn update_selected_model(
     mut commands: Commands,
     entities: Query<(Entity, &Transform), With<TrackSelectionModelMarker>>,
@@ -110,10 +110,9 @@ fn update_selected_model(
     });
     let _tiledflow_material = standard_materials.add(StandardMaterial {
         base_color_channel: UvChannel::Uv0,
-        base_color_texture: Some(asset_server.load_with_settings(
-            "textures/fantasy_ui_borders/panel-border-010.png",
-            make_tileable,
-        )),
+        base_color_texture: Some(
+            asset_server.load_with_settings("textures/panel-border-010.png", make_tileable),
+        ),
         ..StandardMaterial::default()
     });
     let racing_line_material = racing_line_materials.add(racing_line_material::make(
@@ -148,8 +147,6 @@ fn animate_selected_model(
 }
 
 //////////////////////////////////////////////////////////////////////
-
-*/
 
 #[derive(Component)]
 struct TrackSelectionSceneMarker;

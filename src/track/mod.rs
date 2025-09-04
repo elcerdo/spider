@@ -1,4 +1,4 @@
-use crate::global_state::{GlobalState, TrackNickname, TRACK_NICKNAMES};
+use crate::global_state::{GlobalState, TRACK_NICKNAMES, TrackNickname};
 use crate::material::racing_line_material;
 use crate::material::wavy_material;
 
@@ -16,7 +16,7 @@ mod data;
 mod piece;
 
 pub use data::TRACK_HANDLES;
-pub use piece::Segment;
+// pub use piece::Segment;
 pub use piece::Track;
 
 const TRACK_GROUND_COLOR: Srgba = Srgba::rgb(0.4, 0.4, 0.4);
@@ -104,12 +104,12 @@ fn populate_camera_and_lights(mut commands: Commands, asset_server: Res<AssetSer
         }),
         Msaa::Off,
         ScreenSpaceReflections::default(),
-        EnvironmentMapLight {
-            diffuse_map: asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
-            specular_map: asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
-            intensity: 10e2,
-            ..default()
-        },
+        // EnvironmentMapLight {
+        //     diffuse_map: asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+        //     specular_map: asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+        //     intensity: 10e2,
+        //     ..default()
+        // },
         Transform::from_xyz(-10.0, 10.0, 15.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 }
@@ -131,7 +131,7 @@ fn populate_track(
 
     info!("** populate_track **");
 
-    let (track_length, track_up, maybe_lateral_range, track_mesh, checkpoint_mesh) =
+    let (track_length, track_up, maybe_lateral_range, track_mesh /*, checkpoint_mesh*/) =
         match state.get() {
             GlobalState::TrackSelected(TrackNickname::Beginner) => {
                 let track = tracks.get(&TRACK_HANDLES[0]).unwrap();
@@ -140,7 +140,7 @@ fn populate_track(
                     track.initial_up,
                     None,
                     meshes.add(track.track.clone()),
-                    meshes.add(track.checkpoint.clone()),
+                    // meshes.add(track.checkpoint.clone()),
                 )
             }
             GlobalState::TrackSelected(TrackNickname::Vertical) => {
@@ -150,7 +150,7 @@ fn populate_track(
                     track.initial_up,
                     None,
                     meshes.add(track.track.clone()),
-                    meshes.add(track.checkpoint.clone()),
+                    // meshes.add(track.checkpoint.clone()),
                 )
             }
             GlobalState::TrackSelected(TrackNickname::Advanced) => {
@@ -160,7 +160,7 @@ fn populate_track(
                     track.initial_up,
                     Some(Vec2::new(-1.5, 1.5)),
                     meshes.add(track.track.clone()),
-                    meshes.add(track.checkpoint.clone()),
+                    // meshes.add(track.checkpoint.clone()),
                 )
             }
             _ => unreachable!(),
@@ -179,13 +179,13 @@ fn populate_track(
     }
     let overlay_material = racing_line_materials.add(overlay_material);
 
-    // checkpoints
-    commands.spawn((
-        GameSceneMarker,
-        Mesh3d(checkpoint_mesh),
-        MeshMaterial3d(checkpoint_material),
-        Transform::from_translation(2.0 * TRACK_EPSILON * track_up),
-    ));
+    // // checkpoints
+    // commands.spawn((
+    //     GameSceneMarker,
+    //     Mesh3d(checkpoint_mesh),
+    //     MeshMaterial3d(checkpoint_material),
+    //     Transform::from_translation(2.0 * TRACK_EPSILON * track_up),
+    // ));
 
     // racing lines
     commands.spawn((

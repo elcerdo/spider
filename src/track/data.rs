@@ -1,6 +1,7 @@
-use crate::track::piece::{prepare_track, CornerData, StraightData, Track, TrackData, TrackPiece};
+use crate::track::piece::prepare_track;
+use crate::track::piece::{CornerData, StraightData, Track, TrackData, TrackPiece};
 
-use bevy::asset::{weak_handle, Assets};
+use bevy::asset::{Assets, weak_handle};
 use bevy::math::Vec3;
 
 use bevy::prelude::info;
