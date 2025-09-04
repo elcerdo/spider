@@ -103,7 +103,7 @@ fn populate_camera_and_lights(mut commands: Commands, asset_server: Res<AssetSer
             ..OrthographicProjection::default_3d()
         }),
         Msaa::Off,
-        ScreenSpaceReflections::default(),
+        // ScreenSpaceReflections::default(),
         // EnvironmentMapLight {
         //     diffuse_map: asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
         //     specular_map: asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -131,7 +131,7 @@ fn populate_track(
 
     info!("** populate_track **");
 
-    let (track_length, track_up, maybe_lateral_range, track_mesh , checkpoint_mesh) =
+    let (track_length, track_up, maybe_lateral_range, track_mesh, checkpoint_mesh) =
         match state.get() {
             GlobalState::TrackSelected(TrackNickname::Beginner) => {
                 let track = tracks.get(&TRACK_HANDLES[0]).unwrap();
@@ -187,14 +187,14 @@ fn populate_track(
         Transform::from_translation(2.0 * TRACK_EPSILON * track_up),
     ));
 
-    // racing lines
-    commands.spawn((
-        GameSceneMarker,
-        Mesh3d(track_mesh.clone()),
-        AnimatedRacingLineMarker,
-        MeshMaterial3d(overlay_material),
-        Transform::from_translation(1.0 * TRACK_EPSILON * track_up),
-    ));
+    // // racing lines
+    // commands.spawn((
+    //     GameSceneMarker,
+    //     Mesh3d(track_mesh.clone()),
+    //     AnimatedRacingLineMarker,
+    //     MeshMaterial3d(overlay_material),
+    //     Transform::from_translation(1.0 * TRACK_EPSILON * track_up),
+    // ));
 
     // track
     commands.spawn((

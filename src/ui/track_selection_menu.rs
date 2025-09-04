@@ -127,13 +127,13 @@ fn update_selected_model(
         AnimatedRacingLineMarker,
         Transform::from_rotation(rotation),
     ));
-    commands.spawn((
-        TrackSelectionModelMarker,
-        Mesh3d(mesh),
-        MeshMaterial3d(racing_line_material),
-        AnimatedRacingLineMarker,
-        Transform::from_rotation(rotation) * Transform::from_translation(track.initial_up * 1e-3),
-    ));
+    // commands.spawn((
+    //     TrackSelectionModelMarker,
+    //     Mesh3d(mesh),
+    //     MeshMaterial3d(racing_line_material),
+    //     AnimatedRacingLineMarker,
+    //     Transform::from_rotation(rotation) * Transform::from_translation(track.initial_up * 1e-3),
+    // ));
 }
 
 fn animate_selected_model(
