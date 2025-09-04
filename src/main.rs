@@ -3,12 +3,13 @@
 mod background;
 mod global_state;
 mod material;
+mod simu;
 mod track;
 mod ui;
-// mod simu;
-// mod vehicle;
+mod vehicle;
 
 use bevy::prelude::*;
+use global_state::GlobalState;
 
 fn main() {
     let mut app = App::new();
@@ -28,13 +29,13 @@ fn main() {
     app.add_plugins(DefaultPlugins);
     app.add_plugins(material::CustomMaterialPlugin);
     app.add_plugins(global_state::GlobalStatePlugin);
-    // app.add_plugins(ui::UiPlugin);
     app.add_plugins(ui::GameDoneScreenPlugin);
     app.add_plugins(ui::TrackSelectionMenuPlugin);
     app.add_plugins(background::BackgroundPlugin);
-    // app.add_plugins(simu::SimuPlugin);
+    app.add_plugins(simu::SimuPlugin);
     app.add_plugins(track::TrackPlugin);
-    // app.add_plugins(vehicle::VehiclePlugin);
+    app.add_plugins(vehicle::VehiclePlugin);
+    // app.add_plugins(ui::UiPlugin);
 
     /*
     #[cfg(feature = "bevy_dev_tools")]
@@ -82,8 +83,17 @@ fn main() {
 }
 
 #[cfg(not(target_family = "wasm"))]
-fn keyboard_shortcuts(mut writer: EventWriter<AppExit>, keyboard: Res<ButtonInput<KeyCode>>) {
-    if keyboard.just_pressed(KeyCode::Escape) {
+fn keyboard_shortcuts(
+    mut writer: EventWriter<AppExit>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    state: Res<State<GlobalState>>,
+) {
+    let can_quit = match state.get() {
+        GlobalState::TrackSelectionIdle => true,
+        GlobalState::TrackSelectionHoovered(_) => true,
+        _ => false,
+    };
+    if can_quit && keyboard.just_pressed(KeyCode::Escape) {
         writer.write(AppExit::Success);
     }
     if keyboard.just_pressed(KeyCode::Space) {

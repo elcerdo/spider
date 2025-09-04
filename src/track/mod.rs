@@ -16,7 +16,7 @@ mod data;
 mod piece;
 
 pub use data::TRACK_HANDLES;
-// pub use piece::Segment;
+pub use piece::Segment;
 pub use piece::Track;
 
 const TRACK_GROUND_COLOR: Srgba = Srgba::rgb(0.4, 0.4, 0.4);

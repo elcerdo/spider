@@ -12,6 +12,8 @@ log = { version = "0.4.21", features = ["std"] }
 clap = { version = "4", features = ["derive"] }
 bevy = { version = "0.16.1", features = ["webgpu", "web"] }
 priority-queue = "2.5.0"
+kd-tree = { version = "0.6.1", features = ["nalgebra"] }
+typenum = "1.18.0"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 pollster = { version = "0.4.0", features = ["macro"] }

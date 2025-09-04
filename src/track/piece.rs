@@ -4,7 +4,7 @@ use bevy::math::{Mat2, Vec2, Vec3};
 use bevy::reflect::TypePath;
 use bevy::render::mesh::Mesh;
 
-// use kd_tree::{KdPoint, KdTree};
+use kd_tree::{KdPoint, KdTree};
 
 use std::collections::HashMap;
 
@@ -141,7 +141,6 @@ impl Default for Segment {
     }
 }
 
-/*
 impl KdPoint for Segment {
     type Scalar = f32;
     type Dim = typenum::U4; // 4 dimensional tree.
@@ -193,21 +192,19 @@ pub struct Collision {
     pub transition_kdtree: KdTree<Segment>,
 }
 
-*/
-
 #[derive(Asset, TypePath)]
 pub struct Track {
     pub track: Mesh,
     pub checkpoint: Mesh,
     pub total_length: f32,
-    // pub is_looping: bool,
-    // pub layer_to_collisions: HashMap<u8, Collision>,
-    // pub checkpoint_count: u8,
+    pub is_looping: bool,
+    pub checkpoint_count: u8,
+    pub layer_to_collisions: HashMap<u8, Collision>,
     pub initial_up: Vec3,
-    // pub initial_position: Vec3,
-    // pub initial_forward: Vec3,
-    // pub initial_left: f32,
-    // pub initial_right: f32,
+    pub initial_position: Vec3,
+    pub initial_forward: Vec3,
+    pub initial_left: f32,
+    pub initial_right: f32,
 }
 
 pub fn prepare_track(track_data: &TrackData) -> Track {
@@ -563,7 +560,6 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
     checkpoint = checkpoint.with_inserted_indices(Indices::U32(checkpoint_triangles));
     // checkpoint = checkpoint.with_generated_tangents().unwrap();
 
-    /*
     let mut layer_to_collisions = HashMap::new();
     for (section, track_segments) in track_layer_to_segments {
         layer_to_collisions
@@ -586,19 +582,18 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
         let collision = layer_to_collisions.get_mut(&section).unwrap();
         collision.transition_kdtree = KdTree::build_by_ordered_float(transition_segments);
     }
-    */
 
     Track {
         track,
         checkpoint,
         total_length: current_length,
-        // is_looping,
-        // checkpoint_count,
-        // layer_to_collisions,
+        is_looping,
+        checkpoint_count,
+        layer_to_collisions,
         initial_up: track_data.initial_up,
-        // initial_position: track_data.initial_position,
-        // initial_forward: track_data.initial_forward,
-        // initial_left: track_data.initial_left,
-        // initial_right: track_data.initial_right,
+        initial_position: track_data.initial_position,
+        initial_forward: track_data.initial_forward,
+        initial_left: track_data.initial_left,
+        initial_right: track_data.initial_right,
     }
 }
