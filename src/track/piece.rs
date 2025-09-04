@@ -198,7 +198,7 @@ pub struct Collision {
 #[derive(Asset, TypePath)]
 pub struct Track {
     pub track: Mesh,
-    // pub checkpoint: Mesh,
+    pub checkpoint: Mesh,
     pub total_length: f32,
     // pub is_looping: bool,
     // pub layer_to_collisions: HashMap<u8, Collision>,
@@ -554,8 +554,6 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
     track = track.with_inserted_attribute(Mesh::ATTRIBUTE_UV_1, track_pqs);
     track = track.with_generated_tangents().unwrap();
 
-    /*
-
     let mut checkpoint = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
@@ -565,6 +563,7 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
     checkpoint = checkpoint.with_inserted_indices(Indices::U32(checkpoint_triangles));
     // checkpoint = checkpoint.with_generated_tangents().unwrap();
 
+    /*
     let mut layer_to_collisions = HashMap::new();
     for (section, track_segments) in track_layer_to_segments {
         layer_to_collisions
@@ -591,7 +590,7 @@ pub fn prepare_track(track_data: &TrackData) -> Track {
 
     Track {
         track,
-        // checkpoint,
+        checkpoint,
         total_length: current_length,
         // is_looping,
         // checkpoint_count,

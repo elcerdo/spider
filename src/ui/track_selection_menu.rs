@@ -31,7 +31,6 @@ impl Plugin for TrackSelectionMenuPlugin {
 
         app.add_systems(Update, animate_selected_model);
         app.add_systems(Update, update_menu);
-
         // app.add_systems(
         //     Update,
         //     quit_with_escape.run_if(in_state(GlobalState::TrackSelectionIdle)),

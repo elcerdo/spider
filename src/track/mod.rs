@@ -131,7 +131,7 @@ fn populate_track(
 
     info!("** populate_track **");
 
-    let (track_length, track_up, maybe_lateral_range, track_mesh /*, checkpoint_mesh*/) =
+    let (track_length, track_up, maybe_lateral_range, track_mesh , checkpoint_mesh) =
         match state.get() {
             GlobalState::TrackSelected(TrackNickname::Beginner) => {
                 let track = tracks.get(&TRACK_HANDLES[0]).unwrap();
@@ -140,7 +140,7 @@ fn populate_track(
                     track.initial_up,
                     None,
                     meshes.add(track.track.clone()),
-                    // meshes.add(track.checkpoint.clone()),
+                    meshes.add(track.checkpoint.clone()),
                 )
             }
             GlobalState::TrackSelected(TrackNickname::Vertical) => {
@@ -150,7 +150,7 @@ fn populate_track(
                     track.initial_up,
                     None,
                     meshes.add(track.track.clone()),
-                    // meshes.add(track.checkpoint.clone()),
+                    meshes.add(track.checkpoint.clone()),
                 )
             }
             GlobalState::TrackSelected(TrackNickname::Advanced) => {
@@ -160,7 +160,7 @@ fn populate_track(
                     track.initial_up,
                     Some(Vec2::new(-1.5, 1.5)),
                     meshes.add(track.track.clone()),
-                    // meshes.add(track.checkpoint.clone()),
+                    meshes.add(track.checkpoint.clone()),
                 )
             }
             _ => unreachable!(),
@@ -179,13 +179,13 @@ fn populate_track(
     }
     let overlay_material = racing_line_materials.add(overlay_material);
 
-    // // checkpoints
-    // commands.spawn((
-    //     GameSceneMarker,
-    //     Mesh3d(checkpoint_mesh),
-    //     MeshMaterial3d(checkpoint_material),
-    //     Transform::from_translation(2.0 * TRACK_EPSILON * track_up),
-    // ));
+    // checkpoints
+    commands.spawn((
+        GameSceneMarker,
+        Mesh3d(checkpoint_mesh),
+        MeshMaterial3d(checkpoint_material),
+        Transform::from_translation(2.0 * TRACK_EPSILON * track_up),
+    ));
 
     // racing lines
     commands.spawn((
