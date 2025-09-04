@@ -2,7 +2,7 @@ use crate::global_state::GlobalState;
 
 use bevy::prelude::*;
 
-use super::consts::*;
+use super::colors::*;
 
 pub struct GameDoneScreenPlugin;
 

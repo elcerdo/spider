@@ -8,7 +8,7 @@ use bevy::prelude::MeshMaterial3d;
 use bevy::prelude::{Component, Handle, Query, Res, ResMut, Time, With};
 
 const COLOR_START_LINE: Srgba = bevy::color::palettes::basic::WHITE;
-const SHADER_PATH: &str = "shaders/offroad/racing_line.wgsl";
+const SHADER_PATH: &str = "shaders/racing_line.wgsl";
 
 // This struct defines the data that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]

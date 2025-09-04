@@ -18,7 +18,7 @@ use bevy::prelude::*;
 
 use std::borrow::Cow;
 
-const SHADER_PATH: &str = "shaders/offroad/simu.wgsl";
+const SHADER_PATH: &str = "shaders/simu.wgsl";
 const TEXTURE_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
 const TEXTURE_SIZE: (u32, u32) = (1024, 1024);
 const WORKGROUP_SIZE: u32 = 8;

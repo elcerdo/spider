@@ -29,10 +29,10 @@ const COLOR_BEST_LAP_BOARD: Srgba = bevy::color::palettes::css::LIGHT_GRAY;
 
 const MODEL_SCALE: f32 = 0.15;
 
-const MODEL_P1_PATH: &str = "models/offroad/boat_p1.glb";
-const MODEL_P2_PATH: &str = "models/offroad/boat_p2.glb";
-const MODEL_P3_PATH: &str = "models/offroad/boat_p3.glb";
-const MODEL_CUP_PATH: &str = "models/offroad/cup.glb";
+const MODEL_P1_PATH: &str = "models/boat_p1.glb";
+const MODEL_P2_PATH: &str = "models/boat_p2.glb";
+const MODEL_P3_PATH: &str = "models/boat_p3.glb";
+const MODEL_CUP_PATH: &str = "models/cup.glb";
 
 const COLOR_FIRST: Srgba = bevy::color::palettes::css::GOLD;
 const COLOR_SECOND: Srgba = bevy::color::palettes::css::SILVER;
