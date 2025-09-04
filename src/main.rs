@@ -9,7 +9,6 @@ mod ui;
 mod vehicle;
 
 use bevy::prelude::*;
-use global_state::GlobalState;
 
 fn main() {
     let mut app = App::new();
@@ -86,8 +85,10 @@ fn main() {
 fn keyboard_shortcuts(
     mut writer: EventWriter<AppExit>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    state: Res<State<GlobalState>>,
+    state: Res<State<global_state::GlobalState>>,
 ) {
+    use global_state::GlobalState;
+
     let can_quit = match state.get() {
         GlobalState::TrackSelectionIdle => true,
         GlobalState::TrackSelectionHoovered(_) => true,
