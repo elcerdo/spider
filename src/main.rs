@@ -79,13 +79,11 @@ fn keyboard_shortcuts(
     keyboard: Res<ButtonInput<KeyCode>>,
     state: Res<State<global_state::GlobalState>>,
 ) {
-    // use global_state::GlobalState;
-    // let can_quit = match state.get() {
-    //     GlobalState::TrackSelectionIdle => true,
-    //     GlobalState::TrackSelectionHoovered(_) => true,
-    //     _ => false,
-    // };
-    let can_quit = true;
+    use global_state::GlobalState;
+    let can_quit = match state.get() {
+        GlobalState::Ready => true,
+        _ => false,
+    };
     if can_quit && keyboard.just_pressed(KeyCode::Escape) {
         writer.write(AppExit::Success);
     }

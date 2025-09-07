@@ -7,7 +7,7 @@ use bevy::prelude::*;
 pub struct CustomMaterialPlugin;
 
 impl Plugin for CustomMaterialPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, _app: &mut App) {
         // app.add_plugins(MaterialPlugin::<racing_line_material::RacingLineMaterial>::default());
         // app.add_systems(
         //     Update,
