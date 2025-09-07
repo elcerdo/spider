@@ -1,6 +1,8 @@
 use bevy::math::{Vec2, ops};
 use bevy::prelude::Component;
 
+use std::f32::consts::PI;
+
 /*
 
 use std::collections::HashMap;
@@ -112,6 +114,7 @@ pub struct SpiderData {
     pub position_current: Vec2,
     angle_initial: f32,
     pub angle_current: f32,
+    pub is_target_captured: bool,
     // pub layer: u8,
     // pub current_stat: LapStat,
     // pub last_stat: LapStat,
@@ -120,16 +123,16 @@ pub struct SpiderData {
 }
 
 impl SpiderData {
-    pub fn from_position_forward(pos: Vec2, fwd: Vec2) -> Self {
-        let angle = ops::atan2(fwd.y, fwd.x);
+    pub fn from_position(pos: Vec2) -> Self {
         Self {
             // player,
             position_initial: pos,
             position_target: pos,
             position_previous: pos,
             position_current: pos,
-            angle_initial: angle,
-            angle_current: angle,
+            angle_initial: -PI / 2.0,
+            angle_current: -PI / 2.0,
+            is_target_captured: false,
             // layer: 0,
             // current_stat: LapStat::invalid(),
             // last_stat: LapStat::invalid(),
@@ -143,6 +146,7 @@ impl SpiderData {
         self.position_previous = self.position_initial;
         self.position_current = self.position_initial;
         self.angle_current = self.angle_initial;
+        self.is_target_captured = false;
         // self.layer = 0;
         // self.current_stat = LapStat::invalid();
         // self.lap_count = 0;

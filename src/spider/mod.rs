@@ -68,7 +68,7 @@ fn populate_spider(
 
     let mut scene = commands.spawn((
         SceneRoot(scene.clone()),
-        SpiderData::from_position_forward(Vec2::ZERO, Vec2::X),
+        SpiderData::from_position(Vec2::ZERO),
         Transform::from_translation(Vec3::Z * 5.0),
     ));
 
