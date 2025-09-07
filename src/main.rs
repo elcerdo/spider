@@ -4,9 +4,10 @@ mod background;
 mod global_state;
 mod material;
 mod simu;
-mod track;
-mod ui;
-mod vehicle;
+mod spider;
+// mod track;
+// mod ui;
+// mod vehicle;
 
 use bevy::prelude::*;
 
@@ -15,25 +16,16 @@ fn main() {
 
     app.insert_resource(bevy::pbr::DirectionalLightShadowMap { size: 2048 });
 
-    // app.add_systems(Startup, |mut commands: Commands| {
-    //     commands.spawn((
-    //         Camera {
-    //             order: 2,
-    //             ..default()
-    //         },
-    //         Camera2d,
-    //     ));
-    // });
-
     app.add_plugins(DefaultPlugins);
-    app.add_plugins(material::CustomMaterialPlugin);
-    app.add_plugins(global_state::GlobalStatePlugin);
-    app.add_plugins(ui::GameDoneScreenPlugin);
-    app.add_plugins(ui::TrackSelectionMenuPlugin);
     app.add_plugins(background::BackgroundPlugin);
+    app.add_plugins(global_state::GlobalStatePlugin);
+    app.add_plugins(material::CustomMaterialPlugin);
     app.add_plugins(simu::SimuPlugin);
-    app.add_plugins(track::TrackPlugin);
-    app.add_plugins(vehicle::VehiclePlugin);
+    app.add_plugins(spider::SpiderPlugin);
+    // app.add_plugins(ui::GameDoneScreenPlugin);
+    // app.add_plugins(ui::TrackSelectionMenuPlugin);
+    // app.add_plugins(track::TrackPlugin);
+    // app.add_plugins(vehicle::VehiclePlugin);
     // app.add_plugins(ui::UiPlugin);
 
     /*
@@ -87,13 +79,13 @@ fn keyboard_shortcuts(
     keyboard: Res<ButtonInput<KeyCode>>,
     state: Res<State<global_state::GlobalState>>,
 ) {
-    use global_state::GlobalState;
-
-    let can_quit = match state.get() {
-        GlobalState::TrackSelectionIdle => true,
-        GlobalState::TrackSelectionHoovered(_) => true,
-        _ => false,
-    };
+    // use global_state::GlobalState;
+    // let can_quit = match state.get() {
+    //     GlobalState::TrackSelectionIdle => true,
+    //     GlobalState::TrackSelectionHoovered(_) => true,
+    //     _ => false,
+    // };
+    let can_quit = true;
     if can_quit && keyboard.just_pressed(KeyCode::Escape) {
         writer.write(AppExit::Success);
     }

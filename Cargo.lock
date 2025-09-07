@@ -4096,6 +4096,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "spider"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bytemuck",
+ "clap",
+ "env_logger",
+ "kd-tree",
+ "log",
+ "pollster",
+ "priority-queue",
+ "typenum",
+ "wgpu",
+]
+
+[[package]]
 name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4157,22 +4173,6 @@ dependencies = [
  "quote",
  "rustversion",
  "syn",
-]
-
-[[package]]
-name = "supersplash"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bytemuck",
- "clap",
- "env_logger",
- "kd-tree",
- "log",
- "pollster",
- "priority-queue",
- "typenum",
- "wgpu",
 ]
 
 [[package]]

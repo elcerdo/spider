@@ -1,5 +1,5 @@
 [package]
-name = "supersplash"
+name = "spider"
 edition = "2024"
 version = "0.1.0"
 authors = ["pierre.gueth@gmail.com"]

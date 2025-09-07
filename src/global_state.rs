@@ -1,28 +1,29 @@
 use bevy::prelude::*;
 
-#[derive(Component, Clone, Debug, Copy, PartialEq, Eq, Hash)]
-pub enum TrackNickname {
-    Beginner,
-    Vertical,
-    Advanced,
-}
+// #[derive(Component, Clone, Debug, Copy, PartialEq, Eq, Hash)]
+// pub enum TrackNickname {
+//     Beginner,
+//     Vertical,
+//     Advanced,
+// }
 
-pub const TRACK_NICKNAMES: &[TrackNickname] = &[
-    TrackNickname::Beginner,
-    TrackNickname::Vertical,
-    TrackNickname::Advanced,
-];
+// pub const TRACK_NICKNAMES: &[TrackNickname] = &[
+//     TrackNickname::Beginner,
+//     TrackNickname::Vertical,
+//     TrackNickname::Advanced,
+// ];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 pub enum GlobalState {
     #[default]
     Init,
-    TrackSelectionInit,
-    TrackSelectionIdle,
-    TrackSelectionHoovered(TrackNickname),
-    TrackSelected(TrackNickname),
-    InGame(TrackNickname),
-    GameDone,
+    Ready,
+    // TrackSelectionInit,
+    // TrackSelectionIdle,
+    // TrackSelectionHoovered(TrackNickname),
+    // TrackSelected(TrackNickname),
+    // InGame(TrackNickname),
+    // GameDone,
 }
 
 pub struct GlobalStatePlugin;
@@ -36,7 +37,7 @@ impl Plugin for GlobalStatePlugin {
         );
     }
     fn finish(&self, app: &mut App) {
-        app.insert_state(GlobalState::TrackSelectionInit);
+        app.insert_state(GlobalState::Ready);
     }
 }
 

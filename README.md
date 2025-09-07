@@ -1,5 +1,4 @@
-# Supersplash
-
+# Spider
 
 ## Build instructions
 

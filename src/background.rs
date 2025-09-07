@@ -1,7 +1,7 @@
-use crate::global_state::{GlobalState, TRACK_NICKNAMES};
+use crate::global_state::GlobalState;
 use crate::material::parallax_material;
 
-use bevy::prelude::{Assets, Commands, Component, Entity, Query, Res, ResMut, With};
+use bevy::prelude::*;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -11,9 +11,12 @@ impl bevy::prelude::Plugin for BackgroundPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         use bevy::prelude::*;
 
-        for track_nickname in TRACK_NICKNAMES {
-            let state = GlobalState::InGame(*track_nickname);
-            app.add_systems(OnEnter(state), populate_background);
+        {
+            let state = GlobalState::Ready;
+            app.add_systems(
+                OnEnter(state),
+                (populate_background, populate_lights_and_cameras).chain(),
+            );
             app.add_systems(OnExit(state), depopulate_background);
         }
     }
@@ -28,6 +31,35 @@ fn depopulate_background(mut commands: Commands, query: Query<Entity, With<Backg
     for entity in query {
         commands.entity(entity).despawn();
     }
+}
+
+fn populate_lights_and_cameras(mut commands: Commands) {
+    // light
+    commands.spawn((
+        BackgroundMarker,
+        DirectionalLight {
+            color: Color::WHITE,
+            shadows_enabled: true,
+            illuminance: light_consts::lux::OVERCAST_DAY,
+            ..default()
+        },
+        Transform::from_translation(Vec3::Y).looking_at(vec3(-1.0, 0.0, -1.0), Vec3::Y),
+    ));
+
+    // camera
+    commands.spawn((
+        BackgroundMarker,
+        Camera3d::default(),
+        Transform::from_xyz(-20.0, 20.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+    commands.spawn((
+        BackgroundMarker,
+        Camera2d,
+        Camera {
+            order: 1,
+            ..default()
+        },
+    ));
 }
 
 fn populate_background(
@@ -50,7 +82,7 @@ fn populate_background(
         BackgroundMarker,
         Mesh3d(meshes.add(Cuboid::new(1.0, 5.0, 1.0))),
         MeshMaterial3d(debug_material),
-        Transform::from_xyz(0.0, 2.5, -2.0),
+        Transform::from_xyz(0.0, 2.5, -10.0),
     ));
 
     // cube
