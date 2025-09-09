@@ -23,5 +23,6 @@ echo "demo $DEMO_DIR"
 echo "wasm $WASM_PATH"
 
 wasm-bindgen "$WASM_PATH" --target web --no-typescript --out-dir "$DEMO_DIR"
+rm -fr "$DEMO_DIR/assets"
 cp -r "assets" "$DEMO_DIR/assets"
 cp "index.html" "$DEMO_DIR/index.html"
