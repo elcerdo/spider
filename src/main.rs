@@ -14,6 +14,14 @@ use bevy::prelude::*;
 fn main() {
     let mut app = App::new();
 
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            canvas: Some("#mygame-canvas".into()),
+            ..default()
+        }),
+        ..default()
+    }));
+
     app.insert_resource(bevy::pbr::DirectionalLightShadowMap { size: 2048 });
 
     app.add_plugins(DefaultPlugins);
