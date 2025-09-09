@@ -1,12 +1,15 @@
 mod data;
 mod physics;
 
+use super::global_state::GlobalState;
 use data::SpiderData;
 
 use bevy::scene::SceneInstanceReady;
 
 use bevy::color::palettes::css::*;
 use bevy::prelude::*;
+
+use std::f32::consts::PI;
 
 const MODEL_SPIDER_PATH: &str = "models/tachikoma.glb";
 // const MODEL_SPIDER_SCALE: f32 = 1.0;
@@ -18,11 +21,9 @@ pub struct SpiderPlugin;
 impl Plugin for SpiderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (populate_spider).chain());
-        // app.init_gizmo_group::<MyRoundGizmos>();
         app.add_systems(
             Update,
             (
-                // exit_game,
                 update_gizmos,
                 reset_vehicle_positions,
                 physics::update_vehicle_physics,
@@ -30,19 +31,13 @@ impl Plugin for SpiderPlugin {
                 // update_statuses,
                 // update_boards_and_cups,
             )
-                .chain(),
-            // .run_if(in_state(state)),
+                .chain()
+                .run_if(in_state(GlobalState::Ready)),
         );
     }
 }
 
 //////////////////////////////////////////////////////////////////////
-
-// fn exit_game(mut next_state: ResMut<NextState<GlobalState>>, keyboard: Res<ButtonInput<KeyCode>>) {
-//     if keyboard.just_pressed(KeyCode::Escape) {
-//         next_state.set(GlobalState::GameDone);
-//     }
-// }
 
 fn reset_vehicle_positions(
     mut vehicles: Query<&mut SpiderData>,
@@ -68,9 +63,6 @@ fn populate_spider(
     server: Res<AssetServer>,
     mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
-    // tracks: Res<Assets<Track>>,
-    // state: Res<State<GlobalState>>,
 ) {
     // animation from our example asset, which has an index of two.
     let (graph, index) = AnimationGraph::from_clip(
@@ -82,7 +74,7 @@ fn populate_spider(
 
     let mut scene = commands.spawn((
         SceneRoot(scene.clone()),
-        SpiderData::from_position(Vec2::ZERO),
+        SpiderData::from_position_and_angle(Vec2::ZERO, -PI / 2.0),
         SpiderAnimation { graph, index },
         Transform::from_translation(Vec3::Z * 5.0),
     ));
@@ -147,32 +139,8 @@ fn play_animation_when_ready(
     }
 }
 
-fn update_gizmos(
-    mut vehicles: Query<&mut SpiderData>,
-    mut gizmos: Gizmos,
-    keyboard: Res<ButtonInput<KeyCode>>,
-) {
-    if keyboard.just_pressed(KeyCode::KeyT) {
-        info!("toggle gizmos");
-        // for (_, config, _) in config_store.iter_mut() {
-        //     config.depth_bias = if config.depth_bias == 0. { -1. } else { 0. };
-        // }
-    }
-
-    // let (config, _) = config_store.config_mut::<MyRoundGizmos>();
-    // if keyboard.pressed(KeyCode::ArrowRight) {
-    //     config.line.width += 5. * time.delta_secs();
-    //     config.line.width = config.line.width.clamp(0., 50.);
-    // }
-    // if keyboard.pressed(KeyCode::ArrowLeft) {
-    //     config.line.width -= 5. * time.delta_secs();
-    //     config.line.width = config.line.width.clamp(0., 50.);
-    // }
-    // if keyboard.just_pressed(KeyCode::Digit1) {
-    //     config.enabled ^= true;
-    // }
-
-    for vehicle in vehicles.iter_mut() {
+fn update_gizmos(vehicles: Query<&SpiderData>, mut gizmos: Gizmos) {
+    for vehicle in vehicles.iter() {
         gizmos.cross(
             Vec3::new(vehicle.position_target.x, 0.0, vehicle.position_target.y),
             5.0,
