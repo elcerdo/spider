@@ -4,6 +4,9 @@ set -e
 set -u
 
 PROJECT="spider"
+
+cargo build --release --target wasm32-unknown-unknown
+
 DEMO_DIR="../demo_public/$PROJECT"
 WASM_PATH="$(find "target" | grep "$PROJECT.wasm")"
 
