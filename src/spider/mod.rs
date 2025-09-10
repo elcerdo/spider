@@ -24,9 +24,9 @@ impl Plugin for SpiderPlugin {
         app.add_systems(
             Update,
             (
-                update_gizmos,
                 reset_vehicle_positions,
                 physics::update_vehicle_physics,
+                update_gizmos,
                 // collision::bounce_and_resolve_checkpoints,
                 // update_statuses,
                 // update_boards_and_cups,
@@ -56,6 +56,7 @@ fn reset_vehicle_positions(
 struct SpiderAnimation {
     graph: Handle<AnimationGraph>,
     index: AnimationNodeIndex,
+    legs: Vec<Vec2>,
 }
 
 fn populate_spider(
@@ -72,11 +73,19 @@ fn populate_spider(
 
     let scene: Handle<Scene> = server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
 
+    let legs = vec![
+        vec2(-5.0, 0.0),
+        vec2(5.0, 0.0),
+        vec2(0.0, -5.0),
+        vec2(0.0, 5.0),
+        vec2(5.0, 1.0),
+    ];
+
     let mut scene = commands.spawn((
         SceneRoot(scene.clone()),
         SpiderData::from_position_and_angle(Vec2::ZERO, -PI / 2.0),
-        SpiderAnimation { graph, index },
-        Transform::from_translation(Vec3::Z * 5.0),
+        SpiderAnimation { graph, index, legs },
+        Transform::IDENTITY,
     ));
 
     scene.observe(play_animation_when_ready);
@@ -139,17 +148,15 @@ fn play_animation_when_ready(
     }
 }
 
-fn update_gizmos(vehicles: Query<&SpiderData>, mut gizmos: Gizmos) {
-    for vehicle in vehicles.iter() {
-        gizmos.cross(
-            Vec3::new(vehicle.position_target.x, 0.0, vehicle.position_target.y),
-            5.0,
-            BLUE_VIOLET,
-        );
-        gizmos.sphere(
-            Vec3::new(vehicle.position_current.x, 0.0, vehicle.position_current.y),
-            2.0,
-            GREEN_YELLOW,
-        );
+fn update_gizmos(query: Query<(&SpiderData, &SpiderAnimation)>, mut gizmos: Gizmos) {
+    let lift = |aa: Vec2| -> Vec3 { vec3(aa.x, 0.0, aa.y) };
+
+    for (vehicle, animation) in query.iter() {
+        gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
+        gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
+        for leg in animation.legs.iter() {
+            // let leg = transform.transform_point(*leg);
+            gizmos.arrow(lift(vehicle.position_current), lift(*leg), WHITE);
+        }
     }
 }

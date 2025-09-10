@@ -1,3 +1,5 @@
+mod twister;
+
 use crate::global_state::GlobalState;
 use crate::material::parallax_material;
 
@@ -15,9 +17,15 @@ impl bevy::prelude::Plugin for BackgroundPlugin {
             let state = GlobalState::Ready;
             app.add_systems(
                 OnEnter(state),
-                (populate_background, populate_lights_and_cameras).chain(),
+                (
+                    populate_background,
+                    populate_lights_and_cameras,
+                    twister::populate,
+                )
+                    .chain(),
             );
             app.add_systems(OnExit(state), depopulate_background);
+            app.add_systems(Update, twister::animate.run_if(in_state(state)));
         }
     }
 }
