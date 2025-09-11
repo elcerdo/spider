@@ -2,9 +2,13 @@ mod data;
 mod physics;
 
 use super::global_state::GlobalState;
+use bevy::math::NormedVectorSpace;
 use data::SpiderData;
+use physics::lift;
 
 use bevy::scene::SceneInstanceReady;
+
+use std::collections::BTreeMap;
 
 use bevy::color::palettes::css::*;
 use bevy::prelude::*;
@@ -56,7 +60,7 @@ fn reset_vehicle_positions(
 struct SpiderAnimation {
     graph: Handle<AnimationGraph>,
     index: AnimationNodeIndex,
-    legs: Vec<Vec2>,
+    legs: BTreeMap<(String, String), (Entity, Entity)>,
 }
 
 fn populate_spider(
@@ -73,23 +77,19 @@ fn populate_spider(
 
     let scene: Handle<Scene> = server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
 
-    let legs = vec![
-        vec2(-5.0, 0.0),
-        vec2(5.0, 0.0),
-        vec2(0.0, -5.0),
-        vec2(0.0, 5.0),
-        vec2(5.0, 1.0),
-    ];
-
     let mut scene = commands.spawn((
         SceneRoot(scene.clone()),
         SpiderData::from_position_and_angle(Vec2::ZERO, -PI / 2.0),
-        SpiderAnimation { graph, index, legs },
+        SpiderAnimation {
+            graph,
+            index,
+            legs: BTreeMap::new(),
+        },
         Transform::IDENTITY,
     ));
 
-    scene.observe(enumerate_bones);
-    // scene.observe(play_animation_when_ready);
+    scene.observe(play_animation_when_ready);
+    scene.observe(populate_leg_entities);
 
     scene.with_children(|parent| {
         let mut gizmo = GizmoAsset::new();
@@ -111,43 +111,6 @@ fn populate_spider(
             ..default()
         });
     });
-}
-
-fn enumerate_bones(
-    trigger: Trigger<SceneInstanceReady>,
-    // mut commands: Commands,
-    // animations: Query<&SpiderAnimation>,
-    children: Query<&Children>,
-    names: Query<(&Name, &ChildOf)>,
-    mut transforms: Query<(&mut Transform, &Name)>,
-) {
-    info!("** enumerate bones **");
-
-    let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
-
-    let target = trigger.target();
-    for entity in children.iter_descendants(target) {
-        if let Ok((name, ChildOf(entity_))) = names.get(entity) {
-            if let Some(groups) = re.captures(name) {
-                let side = &groups[1];
-                let side_ = &groups[2];
-                if let Ok((mut transform, name_)) = transforms.get_mut(*entity_) {
-                    // let pos = transform.transform_point(Vec3::ZERO);
-                    transform.translation.z += 5.0;
-                    let ww = match side {
-                        "left" => 1.0,
-                        "right" => -1.0,
-                        _ => 0.0,
-                    };
-                    *transform = transform.with_rotation(
-                        Quat::from_axis_angle(Vec3::Y, ww * PI / 6.0) * transform.rotation,
-                    );
-                    info!("entity {entity} -> {name} {side} {side_}");
-                    info!("parent {entity_} -> name {name_} pos {transform:?}");
-                }
-            }
-        }
-    }
 }
 
 fn play_animation_when_ready(
@@ -186,15 +149,72 @@ fn play_animation_when_ready(
     }
 }
 
-fn update_gizmos(query: Query<(&SpiderData, &SpiderAnimation)>, mut gizmos: Gizmos) {
-    let lift = |aa: Vec2| -> Vec3 { vec3(aa.x, 0.0, aa.y) };
+fn populate_leg_entities(
+    trigger: Trigger<SceneInstanceReady>,
+    mut animation: Single<&mut SpiderAnimation>,
+    children: Query<&Children>,
+    names: Query<&Name>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    info!("** enumerate bones **");
 
+    let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
+    let target = trigger.target();
+
+    let mesh = Cuboid::new(0.5, 0.5, 0.5);
+    let material = StandardMaterial {
+        base_color: YELLOW.into(),
+        ..default()
+    };
+    let mesh = meshes.add(mesh);
+    let material = materials.add(material);
+
+    for entity in children.iter_descendants(target) {
+        if let Ok(name) = names.get(entity) {
+            if let Some(groups) = re.captures(name) {
+                let key: (String, String) = (groups[1].into(), groups[2].into());
+
+                let entity_ = commands
+                    .spawn((
+                        Mesh3d(mesh.clone()),
+                        MeshMaterial3d(material.clone()),
+                        Transform::IDENTITY,
+                    ))
+                    .id();
+
+                animation.legs.insert(key.clone(), (entity, entity_));
+                info!("key {:?}", key);
+                info!("entity {} -> {}", entity, name);
+            }
+        }
+    }
+}
+
+fn update_gizmos(
+    query: Query<(&SpiderData, &SpiderAnimation)>,
+    global_transforms: Query<&GlobalTransform>,
+    mut transforms: Query<&mut Transform>,
+    mut gizmos: Gizmos,
+) {
     for (vehicle, animation) in query.iter() {
         gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
         gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
-        for leg in animation.legs.iter() {
-            // let leg = transform.transform_point(*leg);
-            gizmos.arrow(lift(vehicle.position_current), lift(*leg), WHITE);
+
+        for (entity, entity_) in animation.legs.values() {
+            let transform = global_transforms.get(*entity).unwrap();
+            let pos = transform.transform_point(Vec3::ZERO);
+            let pos_ = transform.transform_point(Vec3::Z * 5.0);
+
+            let mut transform_ = transforms.get_mut(*entity_).unwrap();
+            let delta = pos_ - transform_.translation;
+            if delta.norm() > 2.0 {
+                let lead = delta.normalize() * 1.0;
+                transform_.translation = pos_ + lead;
+            }
+
+            gizmos.arrow(pos, pos_, WHITE);
         }
     }
 }

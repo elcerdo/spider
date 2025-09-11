@@ -1,9 +1,7 @@
 use super::SpiderData;
 
 use bevy::math::{Mat2, Quat, Vec2, Vec3};
-use bevy::prelude::{ButtonInput, KeyCode};
-use bevy::prelude::{Entity, Query, Res, Time, Transform};
-use bevy::prelude::{Gamepad, GamepadAxis, GamepadButton};
+use bevy::prelude::*;
 
 use std::f32::consts::PI;
 
@@ -107,7 +105,11 @@ pub fn update_vehicle_physics(
 
         vehicle.position_previous = vehicle.position_current;
         vehicle.position_current = pos_next;
-        transform.translation = Vec3::new(pos_next.x, 0.0, pos_next.y);
+        transform.translation = lift(pos_next);
         transform.rotation = Quat::from_axis_angle(Vec3::Y, vehicle.angle_current);
     }
+}
+
+pub fn lift(aa: Vec2) -> Vec3 {
+    Vec3::new(aa.x, 0.0, aa.y)
 }
