@@ -88,7 +88,8 @@ fn populate_spider(
         Transform::IDENTITY,
     ));
 
-    scene.observe(play_animation_when_ready);
+    scene.observe(enumerate_bones);
+    // scene.observe(play_animation_when_ready);
 
     scene.with_children(|parent| {
         let mut gizmo = GizmoAsset::new();
@@ -110,6 +111,43 @@ fn populate_spider(
             ..default()
         });
     });
+}
+
+fn enumerate_bones(
+    trigger: Trigger<SceneInstanceReady>,
+    // mut commands: Commands,
+    // animations: Query<&SpiderAnimation>,
+    children: Query<&Children>,
+    names: Query<(&Name, &ChildOf)>,
+    mut transforms: Query<(&mut Transform, &Name)>,
+) {
+    info!("** enumerate bones **");
+
+    let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
+
+    let target = trigger.target();
+    for entity in children.iter_descendants(target) {
+        if let Ok((name, ChildOf(entity_))) = names.get(entity) {
+            if let Some(groups) = re.captures(name) {
+                let side = &groups[1];
+                let side_ = &groups[2];
+                if let Ok((mut transform, name_)) = transforms.get_mut(*entity_) {
+                    // let pos = transform.transform_point(Vec3::ZERO);
+                    transform.translation.z += 5.0;
+                    let ww = match side {
+                        "left" => 1.0,
+                        "right" => -1.0,
+                        _ => 0.0,
+                    };
+                    *transform = transform.with_rotation(
+                        Quat::from_axis_angle(Vec3::Y, ww * PI / 6.0) * transform.rotation,
+                    );
+                    info!("entity {entity} -> {name} {side} {side_}");
+                    info!("parent {entity_} -> name {name_} pos {transform:?}");
+                }
+            }
+        }
+    }
 }
 
 fn play_animation_when_ready(
