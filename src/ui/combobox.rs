@@ -10,21 +10,14 @@ pub struct UiCombobox {
     pub index: usize,
 }
 
-pub fn make_combobox(frame: &mut EntityCommands<'_>, names: Vec<&str>) {
+pub fn make(frame: &mut EntityCommands<'_>, names: Vec<&str>) -> Entity {
     assert!(!names.is_empty());
-    let node = Node {
-        border: UiRect::all(Val::Px(1.0)),
-        padding: UiRect::all(Val::Px(4.0)),
-        margin: UiRect::top(Val::Px(5.0)),
-        width: Val::Px(120.0),
-        align_items: AlignItems::Center,
-        justify_content: JustifyContent::SpaceBetween,
-        ..default()
-    };
+    let mut ret = Option::None;
     frame.with_children(|parent| {
         let default_index = 0;
         let names: Vec<String> = names.into_iter().map(|aa| aa.into()).collect();
         let default_name = names[default_index].clone();
+        let node = make_default_node();
         let mut container = parent.spawn((
             UiCombobox {
                 names: names.clone(),
@@ -40,10 +33,12 @@ pub fn make_combobox(frame: &mut EntityCommands<'_>, names: Vec<&str>) {
         container.with_child((Text::new("<"), TextColor(COLOR_UI_FG.into())));
         container.with_child((Text::new(default_name), TextColor(COLOR_UI_FG.into())));
         container.with_child((Text::new(">"), TextColor(COLOR_UI_FG.into())));
+        ret = Some(container.id());
     });
+    return ret.unwrap();
 }
 
-pub fn update_comboboxes(
+pub fn update(
     mut buttons: Query<
         (
             &Interaction,

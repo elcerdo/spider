@@ -1,13 +1,11 @@
-//! supersplash ftw
+//! spider ftw
 
 mod background;
 mod global_state;
 mod material;
 mod simu;
 mod spider;
-// mod track;
-// mod ui;
-// mod vehicle;
+mod ui;
 
 use bevy::prelude::*;
 
@@ -28,11 +26,7 @@ fn main() {
     app.add_plugins(material::CustomMaterialPlugin);
     app.add_plugins(simu::SimuPlugin);
     app.add_plugins(spider::SpiderPlugin);
-    // app.add_plugins(ui::GameDoneScreenPlugin);
-    // app.add_plugins(ui::TrackSelectionMenuPlugin);
-    // app.add_plugins(track::TrackPlugin);
-    // app.add_plugins(vehicle::VehiclePlugin);
-    // app.add_plugins(ui::UiPlugin);
+    app.add_plugins(ui::UiPlugin);
 
     /*
     #[cfg(feature = "bevy_dev_tools")]

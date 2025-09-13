@@ -1,26 +1,32 @@
+mod checkbox;
 mod colors;
 mod combobox;
-mod game_done_screen;
-mod track_selection_menu;
+// mod game_done_screen;
+// mod track_selection_menu;
 
 use bevy::prelude::*;
 
-pub use game_done_screen::GameDoneScreenPlugin;
-pub use track_selection_menu::TrackSelectionMenuPlugin;
+use checkbox::UiCheckbox;
+
+// pub use game_done_screen::GameDoneScreenPlugin;
+// pub use track_selection_menu::TrackSelectionMenuPlugin;
 
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, populate_ui);
-        app.add_systems(
-            Update,
-            (combobox::update_comboboxes/* , update_ui_01, update_ui_02, animate_ui_00*/).chain(),
-        );
+        app.add_systems(Update, (combobox::update, checkbox::update, update).chain());
     }
 }
 
-fn populate_ui(mut commands: Commands, _meshes: ResMut<Assets<Mesh>>) {
+#[derive(Resource)]
+pub struct UiState {
+    toggle_gizmos: Entity,
+    pub display_gizmos: bool,
+}
+
+fn populate_ui(mut commands: Commands) {
     let mut ui_frame = commands.spawn(Node {
         position_type: PositionType::Absolute,
         right: Val::Px(5.0),
@@ -31,6 +37,18 @@ fn populate_ui(mut commands: Commands, _meshes: ResMut<Assets<Mesh>>) {
         ..default()
     });
 
-    combobox::make_combobox(&mut ui_frame, vec!["aa", "bb", "cc"]);
-    combobox::make_combobox(&mut ui_frame, vec!["x", "yy", "zzz", "wwww"]);
+    combobox::make(&mut ui_frame, vec!["aa", "bb", "cc"]);
+    combobox::make(&mut ui_frame, vec!["x", "yy", "zzz", "wwww"]);
+
+    let toggle_gizmos = checkbox::make(&mut ui_frame, "gizmos");
+
+    commands.insert_resource(UiState {
+        toggle_gizmos,
+        display_gizmos: false,
+    });
+}
+
+fn update(mut ui_state: ResMut<UiState>, checkboxes: Query<&UiCheckbox>) {
+    let foo = checkboxes.get(ui_state.toggle_gizmos).unwrap();
+    ui_state.display_gizmos = foo.checked;
 }

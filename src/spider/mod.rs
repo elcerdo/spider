@@ -2,6 +2,7 @@ mod data;
 mod physics;
 
 use super::global_state::GlobalState;
+use super::ui::UiState;
 use bevy::math::NormedVectorSpace;
 use data::SpiderData;
 use physics::lift;
@@ -72,10 +73,10 @@ struct SpiderAnimation {
 }
 
 fn populate_spider(
-    mut commands: Commands,
     server: Res<AssetServer>,
-    mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
+    mut commands: Commands,
     mut graphs: ResMut<Assets<AnimationGraph>>,
+    // mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
 ) {
     // animation from our example asset, which has an index of two.
     let (graph, index) = AnimationGraph::from_clip(
@@ -99,26 +100,26 @@ fn populate_spider(
     scene.observe(populate_legs);
     scene.observe(play_animation_when_ready);
 
-    scene.with_children(|parent| {
-        let mut gizmo = GizmoAsset::new();
-        gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);
-        parent.spawn(Gizmo {
-            handle: gizmo_assets.add(gizmo),
-            ..default()
-        });
-        let mut gizmo = GizmoAsset::new();
-        gizmo.arrow(Vec3::ZERO, Vec3::Y * 5.0, GREEN);
-        parent.spawn(Gizmo {
-            handle: gizmo_assets.add(gizmo),
-            ..default()
-        });
-        let mut gizmo = GizmoAsset::new();
-        gizmo.arrow(Vec3::ZERO, Vec3::Z * 5.0, BLUE);
-        parent.spawn(Gizmo {
-            handle: gizmo_assets.add(gizmo),
-            ..default()
-        });
-    });
+    // scene.with_children(|parent| {
+    //     let mut gizmo = GizmoAsset::new();
+    //     gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);
+    //     parent.spawn(Gizmo {
+    //         handle: gizmo_assets.add(gizmo),
+    //         ..default()
+    //     });
+    //     let mut gizmo = GizmoAsset::new();
+    //     gizmo.arrow(Vec3::ZERO, Vec3::Y * 5.0, GREEN);
+    //     parent.spawn(Gizmo {
+    //         handle: gizmo_assets.add(gizmo),
+    //         ..default()
+    //     });
+    //     let mut gizmo = GizmoAsset::new();
+    //     gizmo.arrow(Vec3::ZERO, Vec3::Z * 5.0, BLUE);
+    //     parent.spawn(Gizmo {
+    //         handle: gizmo_assets.add(gizmo),
+    //         ..default()
+    //     });
+    // });
 }
 
 fn play_animation_when_ready(
@@ -168,36 +169,35 @@ fn populate_legs(
     names: Query<&Name>,
     parents: Query<&ChildOf>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     info!("** populate legs **");
 
     let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
     let target = trigger.target();
 
-    let mesh = Cuboid::new(0.5, 0.5, SPIDER_LEG_LENGTH);
-    let material = StandardMaterial {
-        base_color: RED.into(),
-        emissive: RED.into(),
-        ..default()
-    };
-    let mesh = meshes.add(mesh);
-    let material = materials.add(material);
+    // let mesh = Cuboid::new(0.5, 0.5, SPIDER_LEG_LENGTH);
+    // let material = StandardMaterial {
+    //     base_color: RED.into(),
+    //     emissive: RED.into(),
+    //     ..default()
+    // };
+    // let mesh = meshes.add(mesh);
+    // let material = materials.add(material);
 
     for entity in children.iter_descendants(target) {
         if let Ok(entity_name) = names.get(entity) {
             if let Some(groups) = re.captures(entity_name) {
                 let key: (String, String) = (groups[1].into(), groups[2].into());
 
-                let mut marker =
-                    commands.spawn((InheritedVisibility::VISIBLE, Transform::IDENTITY));
+                let marker = commands.spawn((Visibility::Visible, Transform::IDENTITY));
 
-                marker.with_child((
-                    Mesh3d(mesh.clone()),
-                    MeshMaterial3d(material.clone()),
-                    Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
-                ));
+                // marker.with_child((
+                //     Mesh3d(mesh.clone()),
+                //     MeshMaterial3d(material.clone()),
+                //     Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
+                // ));
 
                 let marker = marker.id();
 
@@ -268,12 +268,18 @@ fn update_spider_legs(
 }
 
 fn display_gizmos(
-    vehicles_nad_animations: Query<(&SpiderData, &SpiderAnimation)>,
+    ui_state: ResMut<UiState>,
+    vehicles_and_animations: Query<(&SpiderData, &SpiderAnimation)>,
     global_transforms: Query<&GlobalTransform>,
     mut gizmos: Gizmos,
 ) {
-    for (vehicle, animation) in vehicles_nad_animations.iter() {
+    for (vehicle, _) in vehicles_and_animations.iter() {
         gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
+    }
+    if !ui_state.display_gizmos {
+        return;
+    }
+    for (vehicle, animation) in vehicles_and_animations.iter() {
         gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
         for leg in animation.legs.values() {
             let transform = global_transforms.get(leg.parent).unwrap();

@@ -89,7 +89,9 @@ pub fn update_vehicle_physics(
                     let speed = (Vec2::X - Vec2::Y) * physics.target_speed;
                     vehicle.position_target += speed * left_stick_y * physics.dt;
                 }
-                vehicle.is_target_captured = gamepad.pressed(GamepadButton::East);
+                if gamepad.just_pressed(GamepadButton::East) {
+                    vehicle.is_target_captured ^= true;
+                }
             }
         }
 
