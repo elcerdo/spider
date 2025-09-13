@@ -42,7 +42,7 @@ fn depopulate_background(mut commands: Commands, query: Query<Entity, With<Backg
     }
 }
 
-fn populate_lights_and_cameras(mut commands: Commands) {
+fn populate_lights_and_cameras(mut commands: Commands, asset_server: Res<AssetServer>) {
     // light
     commands.spawn((
         BackgroundMarker,
@@ -60,6 +60,12 @@ fn populate_lights_and_cameras(mut commands: Commands) {
         BackgroundMarker,
         Camera3d::default(),
         Transform::from_xyz(-20.0, 20.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y),
+        EnvironmentMapLight {
+            diffuse_map: asset_server.load("envmaps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+            specular_map: asset_server.load("envmaps/pisa_specular_rgb9e5_zstd.ktx2"),
+            intensity: 900.0,
+            ..default()
+        },
     ));
     commands.spawn((
         BackgroundMarker,
