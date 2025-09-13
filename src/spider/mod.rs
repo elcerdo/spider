@@ -293,13 +293,11 @@ fn display_gizmos(
     global_transforms: Query<&GlobalTransform>,
     mut gizmos: Gizmos,
 ) {
-    for (vehicle, _) in vehicles_and_animations.iter() {
-        gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
-    }
     if !ui_state.display_gizmos {
         return;
     }
     for (vehicle, animation) in vehicles_and_animations.iter() {
+        gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
         gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
         for leg in animation.legs.values() {
             let transform = global_transforms.get(leg.parent).unwrap();

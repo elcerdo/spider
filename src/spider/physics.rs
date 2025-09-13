@@ -25,7 +25,7 @@ impl VehiclePhysics {
             brake: 4000.0,                   // m / s^2 / kg ~ N
             turning_speed: 3.5 * PI / 4.0,   // rad / s
             target_speed: 20.0,              // m / s
-            capture_speed: 2.0,              // 1 / s
+            capture_speed: 8.0,              // 1 / s
             dt,                              // s
         }
     }
@@ -75,6 +75,9 @@ pub fn update_vehicle_physics(
             if keyboard.pressed(KeyCode::ArrowDown) {
                 force -= physics.brake * dir_current;
             }
+            if keyboard.just_pressed(KeyCode::Space) {
+                vehicle.is_target_captured ^= true;
+            }
         }
 
         {
@@ -89,7 +92,11 @@ pub fn update_vehicle_physics(
                     let speed = (Vec2::X - Vec2::Y) * physics.target_speed;
                     vehicle.position_target += speed * left_stick_y * physics.dt;
                 }
-                if gamepad.just_pressed(GamepadButton::East) {
+                let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap();
+                if right_stick_x.abs() > 0.05 {
+                    vehicle.angle_current -= physics.turning_speed * right_stick_x * physics.dt;
+                }
+                if gamepad.just_pressed(GamepadButton::South) {
                     vehicle.is_target_captured ^= true;
                 }
             }

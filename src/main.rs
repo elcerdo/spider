@@ -87,7 +87,7 @@ fn keyboard_shortcuts(
     if can_quit && keyboard.just_pressed(KeyCode::Escape) {
         writer.write(AppExit::Success);
     }
-    if keyboard.just_pressed(KeyCode::Space) {
+    if keyboard.just_pressed(KeyCode::KeyT) {
         warn!("reseed");
     }
 }
