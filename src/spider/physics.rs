@@ -22,8 +22,8 @@ impl VehiclePhysics {
             mass: 100.0,                     // kg
             friction: Vec2::new(1e-2, 5e-2), // 0 <= f < 1
             thrust: 4000.0,                  // m / s^2 / kg ~ N
-            brake: 1000.0,                   // m / s^2 / kg ~ N
-            turning_speed: 5.0 * PI / 4.0,   // rad / s
+            brake: 4000.0,                   // m / s^2 / kg ~ N
+            turning_speed: 3.5 * PI / 4.0,   // rad / s
             target_speed: 20.0,              // m / s
             capture_speed: 2.0,              // 1 / s
             dt,                              // s

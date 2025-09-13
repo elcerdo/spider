@@ -3,6 +3,7 @@ mod twister;
 use crate::global_state::GlobalState;
 use crate::material::parallax_material;
 
+use bevy::color::palettes::tailwind::*;
 use bevy::prelude::*;
 
 //////////////////////////////////////////////////////////////////////
@@ -117,6 +118,26 @@ fn populate_background(
         ),
         MeshMaterial3d(parallal_material),
         Transform::from_xyz(3.0, 2.0, 18.0).with_scale(Vec3::ONE * 4.0),
+    ));
+
+    // plain plane
+    commands.spawn((
+        Mesh3d(
+            meshes.add(
+                Plane3d::default()
+                    .mesh()
+                    .size(100.0, 100.0)
+                    .subdivisions(20),
+            ),
+        ),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            perceptual_roughness: 0.8,
+            metallic: 0.0,
+            base_color: LIME_800.into(),
+            // base_color_texture: Some(image_a.clone()),
+            ..default()
+        })),
+        Transform::from_xyz(0.0, 0.0, 0.0),
     ));
 }
 
