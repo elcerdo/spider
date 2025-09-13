@@ -30,6 +30,7 @@ impl Plugin for SpiderPlugin {
             (
                 reset_vehicle_positions,
                 physics::update_vehicle_physics,
+                update_spider_legs,
                 update_gizmos,
                 // collision::bounce_and_resolve_checkpoints,
                 // update_statuses,
@@ -56,11 +57,18 @@ fn reset_vehicle_positions(
 
 //////////////////////////////////////////////////////////////////////
 
+#[derive(Clone, Debug)]
+struct SpiderLeg {
+    marker: Entity,
+    parent: Entity,
+    entity: Entity,
+}
+
 #[derive(Component)]
 struct SpiderAnimation {
     graph: Handle<AnimationGraph>,
     index: AnimationNodeIndex,
-    legs: BTreeMap<(String, String), (Entity, Entity)>,
+    legs: BTreeMap<(String, String), SpiderLeg>,
 }
 
 fn populate_spider(
@@ -88,8 +96,8 @@ fn populate_spider(
         Transform::IDENTITY,
     ));
 
+    scene.observe(populate_legs);
     scene.observe(play_animation_when_ready);
-    scene.observe(populate_leg_entities);
 
     scene.with_children(|parent| {
         let mut gizmo = GizmoAsset::new();
@@ -149,16 +157,21 @@ fn play_animation_when_ready(
     }
 }
 
-fn populate_leg_entities(
+const SPIDER_LEG_LENGTH: f32 = 5.0;
+const SPIDER_STEP_LENGTH: f32 = 1.5;
+const SPIDER_STEP_LEAD: f32 = 0.5;
+
+fn populate_legs(
     trigger: Trigger<SceneInstanceReady>,
     mut animation: Single<&mut SpiderAnimation>,
     children: Query<&Children>,
     names: Query<&Name>,
+    parents: Query<&ChildOf>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    info!("** enumerate bones **");
+    info!("** populate legs **");
 
     let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
     let target = trigger.target();
@@ -172,11 +185,11 @@ fn populate_leg_entities(
     let material = materials.add(material);
 
     for entity in children.iter_descendants(target) {
-        if let Ok(name) = names.get(entity) {
-            if let Some(groups) = re.captures(name) {
+        if let Ok(entity_name) = names.get(entity) {
+            if let Some(groups) = re.captures(entity_name) {
                 let key: (String, String) = (groups[1].into(), groups[2].into());
 
-                let entity_ = commands
+                let marker = commands
                     .spawn((
                         Mesh3d(mesh.clone()),
                         MeshMaterial3d(material.clone()),
@@ -184,36 +197,64 @@ fn populate_leg_entities(
                     ))
                     .id();
 
-                animation.legs.insert(key.clone(), (entity, entity_));
-                info!("key {:?}", key);
-                info!("entity {} -> {}", entity, name);
+                let ChildOf(parent) = parents.get(entity).unwrap();
+
+                let value = SpiderLeg {
+                    marker,
+                    parent: *parent,
+                    entity,
+                };
+
+                animation.legs.insert(key.clone(), value.clone());
+                let parent_name = names.get(*parent).unwrap();
+
+                info!(
+                    "{:?} -> ({:?}, {}, {})",
+                    key, marker, parent_name, entity_name,
+                );
+            }
+        }
+    }
+
+    assert!(animation.legs.len() == 6);
+}
+
+fn update_spider_legs(
+    animations: Query<&SpiderAnimation>,
+    global_transforms: Query<&GlobalTransform>,
+    mut transforms: Query<&mut Transform>,
+) {
+    assert!(SPIDER_STEP_LEAD < SPIDER_STEP_LENGTH);
+    for animation in animations.iter() {
+        for leg in animation.legs.values() {
+            let transform = global_transforms.get(leg.entity).unwrap();
+            let pos = transform.transform_point(Vec3::Z * SPIDER_LEG_LENGTH);
+
+            let mut transform_ = transforms.get_mut(leg.marker).unwrap();
+            let pos_ = transform_.transform_point(Vec3::ZERO);
+            assert!((pos_ - transform_.translation).norm() < 1e-5);
+
+            let delta = pos - pos_;
+            if delta.norm() > SPIDER_STEP_LENGTH {
+                let lead = delta.normalize() * SPIDER_STEP_LEAD;
+                transform_.translation = pos + lead;
             }
         }
     }
 }
 
 fn update_gizmos(
-    query: Query<(&SpiderData, &SpiderAnimation)>,
+    vehicles_nad_animations: Query<(&SpiderData, &SpiderAnimation)>,
     global_transforms: Query<&GlobalTransform>,
-    mut transforms: Query<&mut Transform>,
     mut gizmos: Gizmos,
 ) {
-    for (vehicle, animation) in query.iter() {
+    for (vehicle, animation) in vehicles_nad_animations.iter() {
         gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
         gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
-
-        for (entity, entity_) in animation.legs.values() {
-            let transform = global_transforms.get(*entity).unwrap();
+        for leg in animation.legs.values() {
+            let transform = global_transforms.get(leg.parent).unwrap();
             let pos = transform.transform_point(Vec3::ZERO);
-            let pos_ = transform.transform_point(Vec3::Z * 5.0);
-
-            let mut transform_ = transforms.get_mut(*entity_).unwrap();
-            let delta = pos_ - transform_.translation;
-            if delta.norm() > 2.0 {
-                let lead = delta.normalize() * 1.0;
-                transform_.translation = pos_ + lead;
-            }
-
+            let pos_ = transform.transform_point(Vec3::Y * SPIDER_LEG_LENGTH);
             gizmos.arrow(pos, pos_, WHITE);
         }
     }
