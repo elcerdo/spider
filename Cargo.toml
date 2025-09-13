@@ -4,6 +4,9 @@ edition = "2024"
 version = "0.1.0"
 authors = ["pierre.gueth@gmail.com"]
 
+[features]
+debug_gizmos = []  
+
 [dependencies]
 env_logger = "0.11.7"
 bytemuck = "1.22.0"

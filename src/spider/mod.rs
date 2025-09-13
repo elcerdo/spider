@@ -76,7 +76,6 @@ fn populate_spider(
     server: Res<AssetServer>,
     mut commands: Commands,
     mut graphs: ResMut<Assets<AnimationGraph>>,
-    // mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
 ) {
     // animation from our example asset, which has an index of two.
     let (graph, index) = AnimationGraph::from_clip(
@@ -98,38 +97,48 @@ fn populate_spider(
     ));
 
     scene.observe(populate_legs);
-    scene.observe(play_animation_when_ready);
-
-    // scene.with_children(|parent| {
-    //     let mut gizmo = GizmoAsset::new();
-    //     gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);
-    //     parent.spawn(Gizmo {
-    //         handle: gizmo_assets.add(gizmo),
-    //         ..default()
-    //     });
-    //     let mut gizmo = GizmoAsset::new();
-    //     gizmo.arrow(Vec3::ZERO, Vec3::Y * 5.0, GREEN);
-    //     parent.spawn(Gizmo {
-    //         handle: gizmo_assets.add(gizmo),
-    //         ..default()
-    //     });
-    //     let mut gizmo = GizmoAsset::new();
-    //     gizmo.arrow(Vec3::ZERO, Vec3::Z * 5.0, BLUE);
-    //     parent.spawn(Gizmo {
-    //         handle: gizmo_assets.add(gizmo),
-    //         ..default()
-    //     });
-    // });
+    scene.observe(play_animation);
+    #[cfg(feature = "debug_gizmos")]
+    scene.observe(add_reference_axis);
 }
 
-fn play_animation_when_ready(
+#[cfg(feature = "debug_gizmos")]
+fn add_reference_axis(
+    trigger: Trigger<SceneInstanceReady>,
+    mut commands: Commands,
+    mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
+) {
+    let target = trigger.target();
+    commands.entity(target).with_children(|parent| {
+        let mut gizmo = GizmoAsset::new();
+        gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);
+        parent.spawn(Gizmo {
+            handle: gizmo_assets.add(gizmo),
+            ..default()
+        });
+        let mut gizmo = GizmoAsset::new();
+        gizmo.arrow(Vec3::ZERO, Vec3::Y * 5.0, GREEN);
+        parent.spawn(Gizmo {
+            handle: gizmo_assets.add(gizmo),
+            ..default()
+        });
+        let mut gizmo = GizmoAsset::new();
+        gizmo.arrow(Vec3::ZERO, Vec3::Z * 5.0, BLUE);
+        parent.spawn(Gizmo {
+            handle: gizmo_assets.add(gizmo),
+            ..default()
+        });
+    });
+}
+
+fn play_animation(
     trigger: Trigger<SceneInstanceReady>,
     mut commands: Commands,
     animations: Query<&SpiderAnimation>,
     children: Query<&Children>,
     mut players: Query<&mut AnimationPlayer>,
 ) {
-    info!("** starting animation **");
+    info!("** playing animation **");
 
     // The entity we spawned in `setup_mesh_and_animation` is the trigger's target.
     // Start by finding the AnimationToPlay component we added to that entity.
@@ -169,37 +178,48 @@ fn populate_legs(
     names: Query<&Name>,
     parents: Query<&ChildOf>,
     mut commands: Commands,
-    // mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
+    mut _meshes: ResMut<Assets<Mesh>>,
+    mut _materials: ResMut<Assets<StandardMaterial>>,
 ) {
     info!("** populate legs **");
 
     let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
     let target = trigger.target();
 
-    // let mesh = Cuboid::new(0.5, 0.5, SPIDER_LEG_LENGTH);
-    // let material = StandardMaterial {
-    //     base_color: RED.into(),
-    //     emissive: RED.into(),
-    //     ..default()
-    // };
-    // let mesh = meshes.add(mesh);
-    // let material = materials.add(material);
+    #[cfg(feature = "debug_gizmos")]
+    let block = {
+        let mesh = Cuboid::new(0.5, 0.5, SPIDER_LEG_LENGTH);
+        let material = StandardMaterial {
+            base_color: RED.into(),
+            emissive: RED.into(),
+            ..default()
+        };
+        let mesh = _meshes.add(mesh);
+        let material = _materials.add(material);
+
+        (
+            Mesh3d(mesh.clone()),
+            MeshMaterial3d(material.clone()),
+            Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
+        )
+    };
 
     for entity in children.iter_descendants(target) {
         if let Ok(entity_name) = names.get(entity) {
             if let Some(groups) = re.captures(entity_name) {
                 let key: (String, String) = (groups[1].into(), groups[2].into());
 
-                let marker = commands.spawn((Visibility::Visible, Transform::IDENTITY));
+                #[cfg(feature = "debug_gizmos")]
+                let marker = {
+                    let mut marker = commands.spawn((Visibility::Visible, Transform::IDENTITY));
+                    marker.with_child(block.clone());
+                    marker.id()
+                };
 
-                // marker.with_child((
-                //     Mesh3d(mesh.clone()),
-                //     MeshMaterial3d(material.clone()),
-                //     Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
-                // ));
-
-                let marker = marker.id();
+                #[cfg(not(feature = "debug_gizmos"))]
+                let marker = commands
+                    .spawn((Visibility::Visible, Transform::IDENTITY))
+                    .id();
 
                 let ChildOf(parent) = parents.get(entity).unwrap();
                 let parent = *parent;
