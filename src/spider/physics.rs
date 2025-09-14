@@ -48,7 +48,6 @@ pub fn lift(aa: Vec2) -> Vec3 {
     Vec3::new(aa.x, 0.0, aa.y)
 }
 
-
 pub fn update_vehicles(
     mut vehicles_and_transforms: Query<(&mut SpiderVehicle, &mut Transform)>,
     time: Res<Time>,
@@ -69,7 +68,7 @@ pub fn update_vehicles(
                 }
             }
             Controller::Gamepad => {
-                for gamepad in &gamepads {
+                for gamepad in gamepads.iter() {
                     let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap();
                     if left_stick_x.abs() > 0.05 {
                         vehicle.angle_current -= physics.turning_speed * left_stick_x * physics.dt;
@@ -91,7 +90,7 @@ pub fn update_vehicles(
                 }
             }
             Controller::Gamepad => {
-                for gamepad in &gamepads {
+                for gamepad in gamepads.iter() {
                     let right_trigger = gamepad.get(GamepadButton::RightTrigger2).unwrap();
                     let left_trigger = gamepad.get(GamepadButton::LeftTrigger2).unwrap();
                     if right_trigger.abs() > 0.05 {
