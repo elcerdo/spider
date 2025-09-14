@@ -9,6 +9,9 @@ pub const SPIDER_LEG_LENGTH: f32 = 3.5;
 const SPIDER_STEP_LENGTH: f32 = 1.0;
 const SPIDER_STEP_LEAD: f32 = 0.25;
 
+#[cfg(feature = "debug_gizmos")]
+use bevy::color::palettes::css::*;
+
 pub fn populate_legs(
     trigger: Trigger<SceneInstanceReady>,
     mut legs: Single<&mut SpiderLegs>,
@@ -23,6 +26,8 @@ pub fn populate_legs(
 
     let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
     let target = trigger.target();
+
+    let legs = &mut legs.0;
 
     #[cfg(feature = "debug_gizmos")]
     let block = {
@@ -41,8 +46,6 @@ pub fn populate_legs(
             Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
         )
     };
-
-    let legs = &mut legs.0;
 
     legs.clear();
 
@@ -83,7 +86,7 @@ pub fn populate_legs(
                     entity_name,
                 );
 
-                legs.insert(key.clone(), value.clone());
+                legs.insert(key, value);
             }
         }
     }

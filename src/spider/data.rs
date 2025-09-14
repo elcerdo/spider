@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use std::collections::BTreeMap;
 
-#[derive(Component, Clone)]
+#[derive(Component)]
 pub struct SpiderVehicle {
     position_initial: Vec2,
     pub position_target: Vec2,
@@ -14,7 +14,7 @@ pub struct SpiderVehicle {
 }
 
 impl SpiderVehicle {
-    pub fn from_position_and_angle(pos: Vec2, angle: f32) -> Self {
+    pub fn new(pos: Vec2, angle: f32, is_target_captured: bool) -> Self {
         Self {
             position_initial: pos,
             position_target: pos,
@@ -22,7 +22,7 @@ impl SpiderVehicle {
             position_current: pos,
             angle_initial: angle,
             angle_current: angle,
-            is_target_captured: false,
+            is_target_captured,
         }
     }
 
@@ -35,7 +35,6 @@ impl SpiderVehicle {
     }
 }
 
-#[derive(Clone)]
 pub struct SpiderLeg {
     pub parent: Entity,
     pub marker: Entity,

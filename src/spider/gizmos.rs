@@ -6,9 +6,41 @@ use super::physics::lift;
 use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
 
+#[cfg(feature = "debug_gizmos")]
+use bevy::scene::SceneInstanceReady;
+
 use super::leg::SPIDER_LEG_LENGTH;
 
 use bevy::color::palettes::css::*;
+
+#[cfg(feature = "debug_gizmos")]
+pub fn add_reference_axis(
+    trigger: Trigger<SceneInstanceReady>,
+    mut commands: Commands,
+    mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
+) {
+    let target = trigger.target();
+    commands.entity(target).with_children(|parent| {
+        let mut gizmo = GizmoAsset::new();
+        gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);
+        parent.spawn(Gizmo {
+            handle: gizmo_assets.add(gizmo),
+            ..default()
+        });
+        let mut gizmo = GizmoAsset::new();
+        gizmo.arrow(Vec3::ZERO, Vec3::Y * 5.0, GREEN);
+        parent.spawn(Gizmo {
+            handle: gizmo_assets.add(gizmo),
+            ..default()
+        });
+        let mut gizmo = GizmoAsset::new();
+        gizmo.arrow(Vec3::ZERO, Vec3::Z * 5.0, BLUE);
+        parent.spawn(Gizmo {
+            handle: gizmo_assets.add(gizmo),
+            ..default()
+        });
+    });
+}
 
 pub fn display_vehicles(
     ui_state: ResMut<UiState>,

@@ -18,7 +18,7 @@ pub struct SpiderPlugin;
 
 impl Plugin for SpiderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (populate_spider).chain());
+        app.add_systems(Startup, populate_spiders);
         app.add_systems(
             Update,
             (
@@ -27,9 +27,6 @@ impl Plugin for SpiderPlugin {
                 leg::update_legs,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
-                // collision::bounce_and_resolve_checkpoints,
-                // update_statuses,
-                // update_boards_and_cups,
             )
                 .chain()
                 .run_if(in_state(GlobalState::Ready)),
@@ -52,7 +49,7 @@ fn reset_vehicles(
 
 //////////////////////////////////////////////////////////////////////
 
-fn populate_spider(
+fn populate_spiders(
     server: Res<AssetServer>,
     mut commands: Commands,
     mut graphs: ResMut<Assets<AnimationGraph>>,
@@ -65,45 +62,24 @@ fn populate_spider(
 
     let scene: Handle<Scene> = server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
 
-    let mut scene = commands.spawn((
-        SceneRoot(scene.clone()),
-        data::SpiderVehicle::from_position_and_angle(Vec2::ZERO, -PI / 2.0),
-        data::SpiderAnimation { graph, index },
-        data::SpiderLegs::default(),
-        Transform::IDENTITY,
-    ));
+    let mut populate_spider = |pos: Vec2, angle: f32, keyboard_or_gamepad: bool| {
+        let mut scene = commands.spawn((
+            SceneRoot(scene.clone()),
+            data::SpiderVehicle::new(pos, angle, keyboard_or_gamepad),
+            data::SpiderAnimation {
+                graph: graph.clone(),
+                index: index.clone(),
+            },
+            data::SpiderLegs::default(),
+            Transform::IDENTITY,
+        ));
 
-    scene.observe(leg::populate_legs);
-    scene.observe(anim::play_idle);
-    #[cfg(feature = "debug_gizmos")]
-    scene.observe(add_reference_axis);
-}
+        scene.observe(leg::populate_legs);
+        scene.observe(anim::play_idle);
+        #[cfg(feature = "debug_gizmos")]
+        scene.observe(gizmos::add_reference_axis);
+    };
 
-#[cfg(feature = "debug_gizmos")]
-fn add_reference_axis(
-    trigger: Trigger<SceneInstanceReady>,
-    mut commands: Commands,
-    mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
-) {
-    let target = trigger.target();
-    commands.entity(target).with_children(|parent| {
-        let mut gizmo = GizmoAsset::new();
-        gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);
-        parent.spawn(Gizmo {
-            handle: gizmo_assets.add(gizmo),
-            ..default()
-        });
-        let mut gizmo = GizmoAsset::new();
-        gizmo.arrow(Vec3::ZERO, Vec3::Y * 5.0, GREEN);
-        parent.spawn(Gizmo {
-            handle: gizmo_assets.add(gizmo),
-            ..default()
-        });
-        let mut gizmo = GizmoAsset::new();
-        gizmo.arrow(Vec3::ZERO, Vec3::Z * 5.0, BLUE);
-        parent.spawn(Gizmo {
-            handle: gizmo_assets.add(gizmo),
-            ..default()
-        });
-    });
+    populate_spider(-Vec2::X * 10.0, -PI / 2.0, false);
+    populate_spider(Vec2::X * 10.0, PI / 2.0, true);
 }
