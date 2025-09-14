@@ -41,31 +41,29 @@ fn reset_vehicles(
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     if keyboard.just_pressed(KeyCode::KeyR) {
-        for mut vehicle in &mut vehicles {
+        for mut vehicle in vehicles.iter_mut() {
             vehicle.reset();
         }
     }
 }
-
-//////////////////////////////////////////////////////////////////////
 
 fn populate_spiders(
     server: Res<AssetServer>,
     mut commands: Commands,
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
-    // animation from our example asset, which has an index of two.
-    let (graph, index) = AnimationGraph::from_clip(
-        server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH)),
-    );
-    let graph: Handle<AnimationGraph> = graphs.add(graph);
+    use data::Controller;
 
-    let scene: Handle<Scene> = server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
+    let anim = server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH));
+    let scene = server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
 
-    let mut populate_spider = |pos: Vec2, angle: f32, keyboard_or_gamepad: bool| {
+    let (graph, index) = AnimationGraph::from_clip(anim);
+    let graph = graphs.add(graph);
+
+    let mut populate_spider = |pos: Vec2, angle: f32, controller: Controller| {
         let mut scene = commands.spawn((
             SceneRoot(scene.clone()),
-            data::SpiderVehicle::new(pos, angle, keyboard_or_gamepad),
+            data::SpiderVehicle::new(pos, angle, controller),
             data::SpiderAnimation {
                 graph: graph.clone(),
                 index: index.clone(),
@@ -76,10 +74,11 @@ fn populate_spiders(
 
         scene.observe(leg::populate_legs);
         scene.observe(anim::play_idle);
+
         #[cfg(feature = "debug_gizmos")]
         scene.observe(gizmos::add_reference_axis);
     };
 
-    populate_spider(-Vec2::X * 10.0, -PI / 2.0, false);
-    populate_spider(Vec2::X * 10.0, PI / 2.0, true);
+    populate_spider(-Vec2::X * 10.0, -PI / 2.0, Controller::Gamepad);
+    populate_spider(Vec2::X * 10.0, PI / 2.0, Controller::Keyboard);
 }

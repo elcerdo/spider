@@ -14,7 +14,7 @@ use bevy::color::palettes::css::*;
 
 pub fn populate_legs(
     trigger: Trigger<SceneInstanceReady>,
-    mut legs: Single<&mut SpiderLegs>,
+    mut all_legs: Query<&mut SpiderLegs>,
     children: Query<&Children>,
     names: Query<&Name>,
     parents: Query<&ChildOf>,
@@ -24,11 +24,14 @@ pub fn populate_legs(
 ) {
     info!("** populate legs **");
 
-    let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
     let target = trigger.target();
+    let legs = &mut all_legs.get_mut(target).unwrap().0;
 
-    let legs = &mut legs.0;
+    legs.clear();
 
+    assert!(legs.len() == 0);
+
+    let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
     #[cfg(feature = "debug_gizmos")]
     let block = {
         let mesh = Cuboid::new(0.5, 0.5, SPIDER_LEG_LENGTH);
@@ -46,11 +49,6 @@ pub fn populate_legs(
             Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
         )
     };
-
-    legs.clear();
-
-    assert!(legs.len() == 0);
-
     for entity in children.iter_descendants(target) {
         if let Ok(entity_name) = names.get(entity) {
             if let Some(groups) = re.captures(entity_name) {

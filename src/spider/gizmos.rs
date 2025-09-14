@@ -51,7 +51,6 @@ pub fn display_vehicles(
         return;
     }
     for vehicle in vehicles.iter() {
-        gizmos.cross(lift(vehicle.position_target), 5.0, BLUE_VIOLET);
         gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
     }
 }

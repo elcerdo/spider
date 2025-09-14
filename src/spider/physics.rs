@@ -11,8 +11,6 @@ struct PhysicsSettings {
     thrust: f32,
     brake: f32,
     turning_speed: f32,
-    target_speed: f32,
-    capture_speed: f32,
     dt: f32,
 }
 
@@ -24,8 +22,6 @@ impl PhysicsSettings {
             thrust: 4000.0,                  // m / s^2 / kg ~ N
             brake: 4000.0,                   // m / s^2 / kg ~ N
             turning_speed: 3.5 * PI / 4.0,   // rad / s
-            target_speed: 20.0,              // m / s
-            capture_speed: 8.0,              // 1 / s
             dt,                              // s
         }
     }
@@ -48,77 +44,78 @@ impl PhysicsSettings {
     }
 }
 
+pub fn lift(aa: Vec2) -> Vec3 {
+    Vec3::new(aa.x, 0.0, aa.y)
+}
+
+
 pub fn update_vehicles(
     mut vehicles_and_transforms: Query<(&mut SpiderVehicle, &mut Transform)>,
     time: Res<Time>,
+    gamepads: Query<&Gamepad>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    gamepads: Query<(Entity, &Gamepad)>,
 ) {
+    use super::data::Controller;
     let physics = PhysicsSettings::from_dt(time.delta_secs());
-
     for (mut vehicle, mut transform) in vehicles_and_transforms.iter_mut() {
-        let pos_prev = vehicle.position_previous;
-        let pos_current = vehicle.position_current;
-        let mut force = Vec2::ZERO;
-
-        {
-            if keyboard.pressed(KeyCode::ArrowLeft) {
-                vehicle.angle_current += physics.turning_speed * physics.dt;
-            }
-            if keyboard.pressed(KeyCode::ArrowRight) {
-                vehicle.angle_current -= physics.turning_speed * physics.dt;
-            }
-            let dir_current = Vec2::from_angle(-vehicle.angle_current);
-            if keyboard.pressed(KeyCode::ArrowUp) {
-                force += physics.thrust * dir_current;
-            }
-            if keyboard.pressed(KeyCode::ArrowDown) {
-                force -= physics.brake * dir_current;
-            }
-            if keyboard.just_pressed(KeyCode::Space) {
-                vehicle.is_target_captured ^= true;
-            }
-        }
-
-        {
-            for (_, gamepad) in &gamepads {
-                let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap();
-                let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap();
-                if left_stick_x.abs() > 0.05 {
-                    let speed = (Vec2::X + Vec2::Y) * physics.target_speed;
-                    vehicle.position_target += speed * left_stick_x * physics.dt;
+        // Turn main body
+        match vehicle.controller {
+            Controller::Keyboard => {
+                if keyboard.pressed(KeyCode::ArrowLeft) {
+                    vehicle.angle_current += physics.turning_speed * physics.dt;
                 }
-                if left_stick_y.abs() > 0.05 {
-                    let speed = (Vec2::X - Vec2::Y) * physics.target_speed;
-                    vehicle.position_target += speed * left_stick_y * physics.dt;
-                }
-                let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap();
-                if right_stick_x.abs() > 0.05 {
-                    vehicle.angle_current -= physics.turning_speed * right_stick_x * physics.dt;
-                }
-                if gamepad.just_pressed(GamepadButton::South) {
-                    vehicle.is_target_captured ^= true;
+                if keyboard.pressed(KeyCode::ArrowRight) {
+                    vehicle.angle_current -= physics.turning_speed * physics.dt;
                 }
             }
-        }
-
-        let pos_next = if vehicle.is_target_captured {
-            // Moves towards target
-            let alpha = physics.capture_speed * physics.dt;
-            let alpha = alpha.clamp(0.0, 1.0);
-            pos_current * (1.0 - alpha) + vehicle.position_target * alpha
-        } else {
-            // Integrate Newton second law with anisotropic friction
-            physics.compute_next_pos(pos_prev, pos_current, vehicle.angle_current, force)
+            Controller::Gamepad => {
+                for gamepad in &gamepads {
+                    let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap();
+                    if left_stick_x.abs() > 0.05 {
+                        vehicle.angle_current -= physics.turning_speed * left_stick_x * physics.dt;
+                    }
+                }
+            }
         };
 
+        // Compute force
+        let dir_current = Vec2::from_angle(-vehicle.angle_current);
+        let mut force = Vec2::ZERO;
+        match vehicle.controller {
+            Controller::Keyboard => {
+                if keyboard.pressed(KeyCode::ArrowUp) {
+                    force += physics.thrust * dir_current;
+                }
+                if keyboard.pressed(KeyCode::ArrowDown) {
+                    force -= physics.brake * dir_current;
+                }
+            }
+            Controller::Gamepad => {
+                for gamepad in &gamepads {
+                    let right_trigger = gamepad.get(GamepadButton::RightTrigger2).unwrap();
+                    let left_trigger = gamepad.get(GamepadButton::LeftTrigger2).unwrap();
+                    if right_trigger.abs() > 0.05 {
+                        force += physics.thrust * dir_current * right_trigger;
+                    }
+                    if left_trigger.abs() > 0.05 {
+                        force -= physics.brake * dir_current * left_trigger;
+                    }
+                }
+            }
+        };
+
+        // Integrate Newton second law with anisotropic friction
+        let pos_next = physics.compute_next_pos(
+            vehicle.position_previous,
+            vehicle.position_current,
+            vehicle.angle_current,
+            force,
+        );
+
+        // Update state and transform
         vehicle.position_previous = vehicle.position_current;
         vehicle.position_current = pos_next;
         transform.translation = lift(pos_next);
         transform.rotation = Quat::from_axis_angle(Vec3::Y, vehicle.angle_current);
     }
-}
-
-pub fn lift(aa: Vec2) -> Vec3 {
-    Vec3::new(aa.x, 0.0, aa.y)
 }
