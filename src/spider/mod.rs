@@ -1,19 +1,16 @@
+mod anim;
 mod data;
 mod gizmos;
 mod leg;
 mod physics;
 
 use super::global_state::GlobalState;
-use data::SpiderData;
-use leg::SpiderAnimation;
 
 use bevy::prelude::*;
-use bevy::scene::SceneInstanceReady;
 
 use std::f32::consts::PI;
 
 const MODEL_SPIDER_PATH: &str = "models/tachikoma.glb";
-// const MODEL_SPIDER_SCALE: f32 = 1.0;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -25,10 +22,10 @@ impl Plugin for SpiderPlugin {
         app.add_systems(
             Update,
             (
-                reset_vehicle_positions,
-                physics::update_vehicle_physics,
+                reset_vehicles,
+                physics::update_vehicles,
                 leg::update_legs,
-                gizmos::display_body,
+                gizmos::display_vehicles,
                 gizmos::display_legs,
                 // collision::bounce_and_resolve_checkpoints,
                 // update_statuses,
@@ -42,8 +39,8 @@ impl Plugin for SpiderPlugin {
 
 //////////////////////////////////////////////////////////////////////
 
-fn reset_vehicle_positions(
-    mut vehicles: Query<&mut SpiderData>,
+fn reset_vehicles(
+    mut vehicles: Query<&mut data::SpiderVehicle>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     if keyboard.just_pressed(KeyCode::KeyR) {
@@ -70,13 +67,14 @@ fn populate_spider(
 
     let mut scene = commands.spawn((
         SceneRoot(scene.clone()),
-        SpiderData::from_position_and_angle(Vec2::ZERO, -PI / 2.0),
-        SpiderAnimation::from_anim(graph, index),
+        data::SpiderVehicle::from_position_and_angle(Vec2::ZERO, -PI / 2.0),
+        data::SpiderAnimation { graph, index },
+        data::SpiderLegs::default(),
         Transform::IDENTITY,
     ));
 
     scene.observe(leg::populate_legs);
-    scene.observe(play_animation);
+    scene.observe(anim::play_idle);
     #[cfg(feature = "debug_gizmos")]
     scene.observe(add_reference_axis);
 }
@@ -108,40 +106,4 @@ fn add_reference_axis(
             ..default()
         });
     });
-}
-
-fn play_animation(
-    trigger: Trigger<SceneInstanceReady>,
-    mut commands: Commands,
-    animations: Query<&SpiderAnimation>,
-    children: Query<&Children>,
-    mut players: Query<&mut AnimationPlayer>,
-) {
-    info!("** playing animation **");
-
-    // The entity we spawned in `setup_mesh_and_animation` is the trigger's target.
-    // Start by finding the AnimationToPlay component we added to that entity.
-    let target = trigger.target();
-    if let Ok(animation) = animations.get(target) {
-        // The SceneRoot component will have spawned the scene as a hierarchy
-        // of entities parented to our entity. Since the asset contained a skinned
-        // mesh and animations, it will also have spawned an animation player
-        // component. Search our entity's descendants to find the animation player.
-        for child in children.iter_descendants(target) {
-            if let Ok(mut player) = players.get_mut(child) {
-                // Tell the animation player to start the animation and keep
-                // repeating it.
-                //
-                // If you want to try stopping and switching animations, see the
-                // `animated_mesh_control.rs` example.
-                player.play(animation.index).repeat();
-
-                // Add the animation graph. This only needs to be done once to
-                // connect the animation player to the mesh.
-                commands
-                    .entity(child)
-                    .insert(AnimationGraphHandle(animation.graph.clone()));
-            }
-        }
-    }
 }

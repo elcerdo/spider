@@ -1,6 +1,6 @@
 use super::super::ui::UiState;
-use super::data::SpiderData;
-use super::leg::SpiderAnimation;
+use super::data::SpiderLegs;
+use super::data::SpiderVehicle;
 use super::physics::lift;
 
 use bevy::math::NormedVectorSpace;
@@ -10,7 +10,11 @@ use super::leg::SPIDER_LEG_LENGTH;
 
 use bevy::color::palettes::css::*;
 
-pub fn display_body(ui_state: ResMut<UiState>, vehicles: Query<&SpiderData>, mut gizmos: Gizmos) {
+pub fn display_vehicles(
+    ui_state: ResMut<UiState>,
+    vehicles: Query<&SpiderVehicle>,
+    mut gizmos: Gizmos,
+) {
     if !ui_state.display_gizmos {
         return;
     }
@@ -22,15 +26,15 @@ pub fn display_body(ui_state: ResMut<UiState>, vehicles: Query<&SpiderData>, mut
 
 pub fn display_legs(
     ui_state: ResMut<UiState>,
-    animations: Query<&SpiderAnimation>,
+    all_legs: Query<&SpiderLegs>,
     global_transforms: Query<&GlobalTransform>,
     mut gizmos: Gizmos,
 ) {
     if !ui_state.display_gizmos {
         return;
     }
-    for animation in animations.iter() {
-        for leg in animation.legs.values() {
+    for legs in all_legs.iter() {
+        for leg in legs.0.values() {
             let transform = global_transforms.get(leg.parent).unwrap();
             let pos = transform.transform_point(Vec3::Y * SPIDER_LEG_LENGTH);
             let pos__ = transform.transform_point(Vec3::ZERO);

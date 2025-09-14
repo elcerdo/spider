@@ -1,11 +1,11 @@
-use super::SpiderData;
+use super::data::SpiderVehicle;
 
 use bevy::math::{Mat2, Quat, Vec2, Vec3};
 use bevy::prelude::*;
 
 use std::f32::consts::PI;
 
-struct VehiclePhysics {
+struct PhysicsSettings {
     mass: f32,
     friction: Vec2,
     thrust: f32,
@@ -16,7 +16,7 @@ struct VehiclePhysics {
     dt: f32,
 }
 
-impl VehiclePhysics {
+impl PhysicsSettings {
     fn from_dt(dt: f32) -> Self {
         Self {
             mass: 100.0,                     // kg
@@ -31,7 +31,7 @@ impl VehiclePhysics {
     }
 }
 
-impl VehiclePhysics {
+impl PhysicsSettings {
     fn compute_next_pos(
         &self,
         pos_prev: Vec2,
@@ -48,15 +48,15 @@ impl VehiclePhysics {
     }
 }
 
-pub fn update_vehicle_physics(
-    mut vehicles: Query<(&mut SpiderData, &mut Transform)>,
+pub fn update_vehicles(
+    mut vehicles_and_transforms: Query<(&mut SpiderVehicle, &mut Transform)>,
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     gamepads: Query<(Entity, &Gamepad)>,
 ) {
-    let physics = VehiclePhysics::from_dt(time.delta_secs());
+    let physics = PhysicsSettings::from_dt(time.delta_secs());
 
-    for (mut vehicle, mut transform) in &mut vehicles {
+    for (mut vehicle, mut transform) in vehicles_and_transforms.iter_mut() {
         let pos_prev = vehicle.position_previous;
         let pos_current = vehicle.position_current;
         let mut force = Vec2::ZERO;

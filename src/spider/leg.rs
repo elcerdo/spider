@@ -1,40 +1,17 @@
+use super::data::SpiderLeg;
+use super::data::SpiderLegs;
+
 use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
 use bevy::scene::SceneInstanceReady;
-
-use std::collections::BTreeMap;
 
 pub const SPIDER_LEG_LENGTH: f32 = 3.5;
 const SPIDER_STEP_LENGTH: f32 = 1.0;
 const SPIDER_STEP_LEAD: f32 = 0.25;
 
-#[derive(Clone)]
-pub struct SpiderLeg {
-    pub parent: Entity,
-    marker: Entity,
-    entity: Entity,
-}
-
-#[derive(Component)]
-pub struct SpiderAnimation {
-    pub graph: Handle<AnimationGraph>,
-    pub index: AnimationNodeIndex,
-    pub legs: BTreeMap<(String, String), SpiderLeg>,
-}
-
-impl SpiderAnimation {
-    pub fn from_anim(graph: Handle<AnimationGraph>, index: AnimationNodeIndex) -> Self {
-        Self {
-            graph,
-            index,
-            legs: BTreeMap::new(),
-        }
-    }
-}
-
 pub fn populate_legs(
     trigger: Trigger<SceneInstanceReady>,
-    mut animation: Single<&mut SpiderAnimation>,
+    mut legs: Single<&mut SpiderLegs>,
     children: Query<&Children>,
     names: Query<&Name>,
     parents: Query<&ChildOf>,
@@ -64,6 +41,12 @@ pub fn populate_legs(
             Transform::from_xyz(0.0, 0.0, SPIDER_LEG_LENGTH / 2.0),
         )
     };
+
+    let legs = &mut legs.0;
+
+    legs.clear();
+
+    assert!(legs.len() == 0);
 
     for entity in children.iter_descendants(target) {
         if let Ok(entity_name) = names.get(entity) {
@@ -100,14 +83,14 @@ pub fn populate_legs(
                     entity_name,
                 );
 
-                animation.legs.insert(key.clone(), value.clone());
+                legs.insert(key.clone(), value.clone());
             }
         }
     }
 
-    assert!(animation.legs.len() == 6);
+    assert!(legs.len() == 6);
 
-    for leg in animation.legs.values() {
+    for leg in legs.values() {
         let mut leg_commands = commands.entity(leg.entity);
         leg_commands.remove_parent_in_place();
         leg_commands.set_parent_in_place(leg.marker);
@@ -115,13 +98,13 @@ pub fn populate_legs(
 }
 
 pub fn update_legs(
-    animations: Query<&SpiderAnimation>,
+    all_legs: Query<&SpiderLegs>,
     global_transforms: Query<&GlobalTransform>,
     mut transforms: Query<&mut Transform>,
 ) {
     assert!(SPIDER_STEP_LEAD < SPIDER_STEP_LENGTH);
-    for animation in animations.iter() {
-        for leg in animation.legs.values() {
+    for legs in all_legs.iter() {
+        for leg in legs.0.values() {
             let transform = global_transforms.get(leg.parent).unwrap();
             let pos = transform.transform_point(Vec3::Y * SPIDER_LEG_LENGTH);
             let pos__ = transform.transform_point(Vec3::ZERO);
