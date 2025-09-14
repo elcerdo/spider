@@ -49,4 +49,5 @@ pub struct SpiderLegs(pub BTreeMap<(String, String), SpiderLeg>);
 pub struct SpiderAnimation {
     pub graph: Handle<AnimationGraph>,
     pub index: AnimationNodeIndex,
+    pub color: LinearRgba,
 }

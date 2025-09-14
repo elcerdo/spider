@@ -8,6 +8,7 @@ use super::global_state::GlobalState;
 
 use bevy::prelude::*;
 
+use bevy::color::palettes::tailwind::*;
 use std::f32::consts::PI;
 
 const MODEL_SPIDER_PATH: &str = "models/tachikoma.glb";
@@ -60,13 +61,14 @@ fn populate_spiders(
     let (graph, index) = AnimationGraph::from_clip(anim);
     let graph = graphs.add(graph);
 
-    let mut populate_spider = |pos: Vec2, angle: f32, controller: Controller| {
+    let mut populate_spider = |pos: Vec2, angle: f32, controller: Controller, color: LinearRgba| {
         let mut scene = commands.spawn((
             SceneRoot(scene.clone()),
             data::SpiderVehicle::new(pos, angle, controller),
             data::SpiderAnimation {
                 graph: graph.clone(),
                 index: index.clone(),
+                color,
             },
             data::SpiderLegs::default(),
             Transform::IDENTITY,
@@ -74,11 +76,22 @@ fn populate_spiders(
 
         scene.observe(leg::populate_legs);
         scene.observe(anim::play_idle);
+        scene.observe(anim::set_color);
 
         #[cfg(feature = "debug_gizmos")]
         scene.observe(gizmos::add_reference_axis);
     };
 
-    populate_spider(-Vec2::X * 10.0, -PI / 2.0, Controller::Gamepad);
-    populate_spider(Vec2::X * 10.0, PI / 2.0, Controller::Keyboard);
+    populate_spider(
+        -Vec2::X * 10.0,
+        -PI / 2.0,
+        Controller::Gamepad,
+        BLUE_500.into(),
+    );
+    populate_spider(
+        Vec2::X * 10.0,
+        PI / 2.0,
+        Controller::Keyboard,
+        YELLOW_500.into(),
+    );
 }

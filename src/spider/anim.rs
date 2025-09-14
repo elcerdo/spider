@@ -4,11 +4,39 @@ use bevy::prelude::*;
 
 use bevy::scene::SceneInstanceReady;
 
-pub fn play_idle(
+pub fn set_color(
     trigger: Trigger<SceneInstanceReady>,
-    mut commands: Commands,
     animations: Query<&SpiderAnimation>,
     children: Query<&Children>,
+    mut materials_: Query<&mut MeshMaterial3d<StandardMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    info!("** set color **");
+    let target = trigger.target();
+    if let Ok(animation) = animations.get(target) {
+        let material = materials.add(StandardMaterial {
+            base_color: animation.color.into(),
+            perceptual_roughness: 0.2,
+            ..default()
+        });
+        for child in children.iter_descendants(target) {
+            if let Ok(mut material_) = materials_.get_mut(child) {
+                let material__ = materials.get(material_.id()).unwrap();
+                let color__ = material__.base_color.to_linear();
+                let dist__ = (color__.red - 0.0).abs() + (color__.blue - 0.16).abs();
+                if dist__ < 0.2 {
+                    *material_ = MeshMaterial3d(material.clone());
+                }
+            }
+        }
+    }
+}
+
+pub fn play_idle(
+    trigger: Trigger<SceneInstanceReady>,
+    animations: Query<&SpiderAnimation>,
+    children: Query<&Children>,
+    mut commands: Commands,
     mut players: Query<&mut AnimationPlayer>,
 ) {
     info!("** playing animation **");
