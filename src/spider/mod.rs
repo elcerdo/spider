@@ -3,6 +3,7 @@ mod data;
 mod gizmos;
 mod leg;
 mod physics;
+mod theme;
 
 use super::global_state::GlobalState;
 
@@ -61,22 +62,26 @@ fn populate_spiders(
     let (graph, index) = AnimationGraph::from_clip(anim);
     let graph = graphs.add(graph);
 
-    let mut populate_spider = |pos: Vec2, angle: f32, controller: Controller, color: LinearRgba| {
+    let mut populate_spider = |pos: Vec2,
+                               angle: f32,
+                               controller: Controller,
+                               color_aa: LinearRgba,
+                               color_bb: LinearRgba| {
         let mut scene = commands.spawn((
             SceneRoot(scene.clone()),
             data::SpiderVehicle::new(pos, angle, controller),
             data::SpiderAnimation {
                 graph: graph.clone(),
                 index: index.clone(),
-                color,
             },
+            data::SpiderTheme { color_aa, color_bb },
             data::SpiderLegs::default(),
             Transform::IDENTITY,
         ));
 
         scene.observe(leg::populate_legs);
         scene.observe(anim::play_idle);
-        scene.observe(anim::set_color);
+        scene.observe(theme::set_theme);
 
         #[cfg(feature = "debug_gizmos")]
         scene.observe(gizmos::add_reference_axis);
@@ -87,11 +92,13 @@ fn populate_spiders(
         -PI / 2.0,
         Controller::Gamepad,
         BLUE_500.into(),
+        ORANGE_500.into(),
     );
     populate_spider(
         Vec2::X * 10.0,
         PI / 2.0,
         Controller::Keyboard,
         YELLOW_500.into(),
+        RED_500.into(),
     );
 }
