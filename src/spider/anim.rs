@@ -12,15 +12,11 @@ pub fn populate_animations(
     mut commands: Commands,
 ) {
     info!("** populate animations **");
-
     let target = trigger.target();
     if let Ok(animation) = animations.get(target) {
         for child in children.iter_descendants(target) {
             if players.get(child).is_ok() {
-                warn!(
-                    "inserting graph with {} weighted nodes",
-                    animation.weighted_nodes.len()
-                );
+                info!("num_weighted_nodes {}", animation.weighted_nodes.len());
                 commands
                     .entity(child)
                     .insert(AnimationGraphHandle(animation.graph.clone()));
@@ -29,11 +25,7 @@ pub fn populate_animations(
     }
 }
 
-/// Takes the weights that were set in the UI and assigns them to the actual
-/// playing animation.
 pub fn update_weights(
-    // mut query: Query<(&mut AnimationPlayer, &SpiderAnimation)>,
-    // mut commands: Commands,
     animations: Query<(&SpiderAnimation, Entity)>,
     children: Query<&Children>,
     mut players: Query<&mut AnimationPlayer>,
