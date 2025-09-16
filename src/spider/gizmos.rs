@@ -86,7 +86,7 @@ pub fn display_guns(
         return;
     }
     for gun in guns.iter() {
-        let transform = global_transforms.get(gun.entity).unwrap();
+        let transform = global_transforms.get(gun.port_entity).unwrap();
         let pos = transform.transform_point(Vec3::Y * SPIDER_LEG_LENGTH);
         let pos__ = transform.transform_point(Vec3::ZERO);
         assert!((pos__ - transform.translation()).norm() < 1e-5);

@@ -60,6 +60,9 @@ pub struct SpiderTheme {
 
 #[derive(Component)]
 pub struct SpiderGun {
-    pub entity: Entity,
+    pub port_entity: Entity,
+    pub bullet_mesh: Handle<Mesh>,
+    pub bullet_material: Handle<StandardMaterial>,
     pub is_shooting: bool,
+    pub last_top: f64,
 }
