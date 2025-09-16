@@ -27,6 +27,7 @@ impl Plugin for SpiderPlugin {
                 reset_vehicles,
                 physics::update_vehicles,
                 leg::update_legs,
+                anim::update_weights,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
             )
@@ -50,17 +51,37 @@ fn reset_vehicles(
 }
 
 fn populate_spiders(
-    server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut animation_graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     use data::Controller;
 
-    let anim = server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH));
-    let scene = server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
+    // asset_server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH))
+    // asset_server.load(GltfAssetLabel::Animation(2).from_asset(MODEL_SPIDER_PATH))
+    let anim_idle = asset_server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH));
+    // let anim_shoot = asset_server.load(GltfAssetLabel::Animation(2).from_asset(MODEL_SPIDER_PATH));
 
-    let (graph, index) = AnimationGraph::from_clip(anim);
-    let graph = graphs.add(graph);
+    let (graph_idle, node_idle) = AnimationGraph::from_clip(anim_idle);
+    // let (graph_shoot, node_shoot) = AnimationGraph::from_clip(anim_shoot);
+    assert!(node_idle == AnimationNodeIndex::new(1));
+    // assert!(node_shoot == AnimationNodeIndex::new(1));
+
+    // // Create the nodes.
+    // let mut animation_graph = AnimationGraph::new();
+    // let node_blend = animation_graph.add_blend(0.5, animation_graph.root);
+    // let node_idle = animation_graph.add_clip(anim_idle, 1.0, animation_graph.root);
+    // // animation_graph.add_clip(anim_shoot, 1.0, blend_node);
+    // // parent: blend_node,
+
+    let weighted_nodes = vec![(1.0, node_idle)];
+    // let animation_nodes = vec![animation_graph.root, blend_node, node_idle];
+
+    let animation_graph = animation_graphs.add(graph_idle);
+    // let graph_idle = animation_graphs.add(graph_idle);
+    // let graph_shoot = animation_graphs.add(graph_shoot);
+
+    let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
 
     let mut populate_spider = |pos: Vec2,
                                angle: f32,
@@ -71,8 +92,8 @@ fn populate_spiders(
             SceneRoot(scene.clone()),
             data::SpiderVehicle::new(pos, angle, controller),
             data::SpiderAnimation {
-                graph: graph.clone(),
-                index: index.clone(),
+                graph: animation_graph.clone(),
+                weighted_nodes: weighted_nodes.clone(),
             },
             data::SpiderTheme { color_aa, color_bb },
             data::SpiderLegs::default(),
@@ -80,7 +101,7 @@ fn populate_spiders(
         ));
 
         scene.observe(leg::populate_legs);
-        scene.observe(anim::play_idle);
+        scene.observe(anim::populate_animations);
         scene.observe(theme::set_theme);
 
         #[cfg(feature = "debug_gizmos")]

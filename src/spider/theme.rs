@@ -25,6 +25,7 @@ pub fn set_theme(
             perceptual_roughness: 0.8,
             ..default()
         });
+        let mut available_materials = std::collections::HashSet::new();
         for child in children.iter_descendants(target) {
             if let Ok(mut material_) = materials_.get_mut(child) {
                 let material__ = materials.get(material_.id()).unwrap();
@@ -39,8 +40,9 @@ pub fn set_theme(
                     *material_ = MeshMaterial3d(material_bb.clone());
                     continue;
                 }
-                info!("!!!!!! {} {}", material_.id(), color__.to_vec3());
+                available_materials.insert(material_.id());
             }
         }
+        info!("num_available_materials {}", available_materials.len());
     }
 }
