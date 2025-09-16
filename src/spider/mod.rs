@@ -32,6 +32,7 @@ impl Plugin for SpiderPlugin {
                 anim::update_animations,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
+                gizmos::display_guns,
             )
                 .chain()
                 .run_if(in_state(GlobalState::Ready)),
@@ -86,10 +87,10 @@ fn populate_spiders(
             },
             data::SpiderTheme { color_aa, color_bb },
             data::SpiderLegs::default(),
-            data::SpiderGun::default(),
             Transform::IDENTITY,
         ));
 
+        scene.observe(gun::populate_gun);
         scene.observe(leg::populate_legs);
         scene.observe(anim::populate_animations);
         scene.observe(theme::set_theme);

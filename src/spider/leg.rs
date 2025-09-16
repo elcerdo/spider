@@ -14,10 +14,10 @@ use bevy::color::palettes::css::*;
 
 pub fn populate_legs(
     trigger: Trigger<SceneInstanceReady>,
-    mut all_legs: Query<&mut SpiderLegs>,
     children: Query<&Children>,
     names: Query<&Name>,
     parents: Query<&ChildOf>,
+    mut all_legs: Query<&mut SpiderLegs>,
     mut commands: Commands,
     mut _meshes: ResMut<Assets<Mesh>>,
     mut _materials: ResMut<Assets<StandardMaterial>>,

@@ -1,4 +1,5 @@
 use super::super::ui::UiState;
+use super::data::SpiderGun;
 use super::data::SpiderLegs;
 use super::data::SpiderVehicle;
 use super::physics::lift;
@@ -72,5 +73,23 @@ pub fn display_legs(
             assert!((pos__ - transform.translation()).norm() < 1e-5);
             gizmos.arrow(pos__, pos, WHITE);
         }
+    }
+}
+
+pub fn display_guns(
+    ui_state: ResMut<UiState>,
+    guns: Query<&SpiderGun>,
+    global_transforms: Query<&GlobalTransform>,
+    mut gizmos: Gizmos,
+) {
+    if !ui_state.display_gizmos {
+        return;
+    }
+    for gun in guns.iter() {
+        let transform = global_transforms.get(gun.entity).unwrap();
+        let pos = transform.transform_point(Vec3::Y * SPIDER_LEG_LENGTH);
+        let pos__ = transform.transform_point(Vec3::ZERO);
+        assert!((pos__ - transform.translation()).norm() < 1e-5);
+        gizmos.arrow(pos__, pos, RED);
     }
 }

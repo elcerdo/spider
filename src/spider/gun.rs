@@ -2,6 +2,38 @@ use super::data::SpiderGun;
 use super::data::SpiderVehicle;
 
 use bevy::prelude::*;
+use bevy::scene::SceneInstanceReady;
+
+pub fn populate_gun(
+    trigger: Trigger<SceneInstanceReady>,
+    children: Query<&Children>,
+    names: Query<&Name>,
+    mut commands: Commands,
+) {
+    info!("** populate gun **");
+
+    let target = trigger.target();
+
+    let entity = {
+        let re = regex::Regex::new(r"^bone_gun_forward$").unwrap();
+        let mut entity = None;
+        for child in children.iter_descendants(target) {
+            if let Ok(name) = names.get(child) {
+                if re.captures(name).is_some() {
+                    warn!("!!!!! {}", name);
+                    entity = Some(child);
+                    break;
+                }
+            }
+        }
+        entity.unwrap()
+    };
+
+    commands.entity(target).insert(SpiderGun {
+        entity,
+        is_shooting: false,
+    });
+}
 
 pub fn update_guns(
     mut guns: Query<(&mut SpiderGun, &SpiderVehicle)>,
