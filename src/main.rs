@@ -57,7 +57,7 @@ fn main() {
         app.add_systems(
             Update,
             |mut wireframe_config: ResMut<WireframeConfig>, keyboard: Res<ButtonInput<KeyCode>>| {
-                if keyboard.just_pressed(KeyCode::Space) {
+                if keyboard.just_pressed(KeyCode::KeyW) {
                     wireframe_config.global = !wireframe_config.global;
                 }
             },

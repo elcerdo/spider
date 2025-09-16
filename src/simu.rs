@@ -6,9 +6,9 @@ use bevy::render::graph::CameraDriverLabel;
 use bevy::render::render_asset::{RenderAssetUsages, RenderAssets};
 use bevy::render::render_graph::{Node, RenderGraph, RenderLabel};
 use bevy::render::render_resource::{
-    binding_types::{texture_storage_2d, uniform_buffer},
     BindGroup, BindGroupEntries, BindGroupLayout, CachedComputePipelineId, ShaderType,
     TextureFormat,
+    binding_types::{texture_storage_2d, uniform_buffer},
 };
 use bevy::render::renderer::RenderDevice;
 use bevy::render::texture::GpuImage;
@@ -91,7 +91,7 @@ fn update_simu_triggers(
     mut simu_triggers: ResMut<SimuTriggers>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
-    let should_reinit = keyboard.pressed(KeyCode::Space);
+    let should_reinit = keyboard.pressed(KeyCode::KeyR);
     simu_triggers.should_reinit = should_reinit;
 }
 

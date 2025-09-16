@@ -20,12 +20,12 @@ pub struct SpiderVehicle {
 impl SpiderVehicle {
     pub fn new(pos: Vec2, angle: f32, controller: Controller) -> Self {
         Self {
+            controller,
             position_initial: pos,
             position_previous: pos,
             position_current: pos,
             angle_initial: angle,
             angle_current: angle,
-            controller,
         }
     }
 
@@ -47,7 +47,8 @@ pub struct SpiderLegs(pub BTreeMap<(String, String), SpiderLeg>);
 
 #[derive(Component)]
 pub struct SpiderAnimation {
-    pub weighted_nodes: Vec<(f32, AnimationNodeIndex)>,
+    pub node_idle: AnimationNodeIndex,
+    pub node_shoot: AnimationNodeIndex,
     pub graph: Handle<AnimationGraph>,
 }
 

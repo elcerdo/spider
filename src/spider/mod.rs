@@ -27,7 +27,7 @@ impl Plugin for SpiderPlugin {
                 reset_vehicles,
                 physics::update_vehicles,
                 leg::update_legs,
-                anim::update_weights,
+                anim::update_animations,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
             )
@@ -57,31 +57,15 @@ fn populate_spiders(
 ) {
     use data::Controller;
 
-    // asset_server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH))
-    // asset_server.load(GltfAssetLabel::Animation(2).from_asset(MODEL_SPIDER_PATH))
+    // Load animations from asset.
     let anim_idle = asset_server.load(GltfAssetLabel::Animation(0).from_asset(MODEL_SPIDER_PATH));
     let anim_shoot = asset_server.load(GltfAssetLabel::Animation(2).from_asset(MODEL_SPIDER_PATH));
 
-    // let (graph_idle, node_idle) = AnimationGraph::from_clip(anim_idle);
-    // let (graph_shoot, node_shoot) = AnimationGraph::from_clip(anim_shoot);
-    // assert!(node_idle == AnimationNodeIndex::new(1));
-    // assert!(node_shoot == AnimationNodeIndex::new(1));
-
-    // // Create the nodes.
+    // Create the graph.
     let mut animation_graph = AnimationGraph::new();
-    // let node_blend = animation_graph.add_blend(0.5, animation_graph.root);
     let node_idle = animation_graph.add_clip(anim_idle, 1.0, animation_graph.root);
-    let node_shoot = animation_graph.add_clip(anim_shoot, 0.0, animation_graph.root);
-    // // parent: blend_node,
-
-    let weighted_nodes = vec![(0.0, node_shoot), (1.0, node_idle)];
-    // let weighted_nodes = vec![(1.0, node_shoot)];
-    // let weighted_nodes = vec![(1.0, node_idle)];
-    // let animation_nodes = vec![animation_graph.root, blend_node, node_idle];
-
+    let node_shoot = animation_graph.add_clip(anim_shoot, 1.0, animation_graph.root);
     let animation_graph = animation_graphs.add(animation_graph);
-    // let graph_idle = animation_graphs.add(graph_idle);
-    // let graph_shoot = animation_graphs.add(graph_shoot);
 
     let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_SPIDER_PATH));
 
@@ -94,7 +78,8 @@ fn populate_spiders(
             SceneRoot(scene.clone()),
             data::SpiderVehicle::new(pos, angle, controller),
             data::SpiderAnimation {
-                weighted_nodes: weighted_nodes.clone(),
+                node_idle,
+                node_shoot,
                 graph: animation_graph.clone(),
             },
             data::SpiderTheme { color_aa, color_bb },
@@ -117,6 +102,7 @@ fn populate_spiders(
         BLUE_500.into(),
         ORANGE_500.into(),
     );
+
     populate_spider(
         Vec2::X * 10.0,
         PI / 2.0,
