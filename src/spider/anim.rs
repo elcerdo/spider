@@ -24,7 +24,7 @@ pub fn set_color(
                 let material__ = materials.get(material_.id()).unwrap();
                 let color__ = material__.base_color.to_linear();
                 let dist__ = (color__.red - 0.0).abs() + (color__.blue - 0.16).abs();
-                if dist__ < 0.2 {
+                if dist__ < 0.05 {
                     *material_ = MeshMaterial3d(material.clone());
                 }
             }
