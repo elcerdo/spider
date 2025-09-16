@@ -30,6 +30,8 @@ impl Plugin for SpiderPlugin {
                 leg::update_legs,
                 gun::update_guns_00,
                 gun::update_guns_01,
+                gun::update_guns_02,
+                gun::update_guns_03,
                 anim::update_animations,
                 gizmos::display_vehicles,
                 gizmos::display_legs,

@@ -66,3 +66,9 @@ pub struct SpiderGun {
     pub is_shooting: bool,
     pub last_top: f64,
 }
+
+#[derive(Component)]
+pub struct SpiderBullet {
+    pub position_initial: Vec3,
+    pub direction: Vec3,
+}
