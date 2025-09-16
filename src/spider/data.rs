@@ -47,8 +47,8 @@ pub struct SpiderLegs(pub BTreeMap<(String, String), SpiderLeg>);
 
 #[derive(Component)]
 pub struct SpiderAnimation {
-    pub graph: Handle<AnimationGraph>,
     pub weighted_nodes: Vec<(f32, AnimationNodeIndex)>,
+    pub graph: Handle<AnimationGraph>,
 }
 
 #[derive(Component)]
