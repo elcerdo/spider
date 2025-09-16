@@ -17,7 +17,6 @@ pub fn populate_legs(
     children: Query<&Children>,
     names: Query<&Name>,
     parents: Query<&ChildOf>,
-    mut all_legs: Query<&mut SpiderLegs>,
     mut commands: Commands,
     mut _meshes: ResMut<Assets<Mesh>>,
     mut _materials: ResMut<Assets<StandardMaterial>>,
@@ -25,10 +24,8 @@ pub fn populate_legs(
     info!("** populate legs **");
 
     let target = trigger.target();
-    let legs = &mut all_legs.get_mut(target).unwrap().0;
 
-    legs.clear();
-
+    let mut legs = std::collections::BTreeMap::new();
     assert!(legs.len() == 0);
 
     let re = regex::Regex::new(r"^leg_(left|right)_(front|mid|back)$").unwrap();
@@ -96,6 +93,8 @@ pub fn populate_legs(
         leg_commands.remove_parent_in_place();
         leg_commands.set_parent_in_place(leg.marker);
     }
+
+    commands.entity(target).insert(SpiderLegs(legs));
 }
 
 pub fn update_legs(

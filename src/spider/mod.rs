@@ -86,7 +86,6 @@ fn populate_spiders(
                 graph: animation_graph.clone(),
             },
             data::SpiderTheme { color_aa, color_bb },
-            data::SpiderLegs::default(),
             Transform::IDENTITY,
         ));
 
