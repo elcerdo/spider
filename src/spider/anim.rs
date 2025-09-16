@@ -1,5 +1,5 @@
 use super::data::SpiderAnimation;
-use super::data::SpiderVehicle;
+use super::data::SpiderGun;
 
 use bevy::prelude::*;
 
@@ -34,26 +34,12 @@ pub fn populate_animations(
 }
 
 pub fn update_animations(
-    animations: Query<(&SpiderAnimation, &SpiderVehicle, Entity)>,
+    animations: Query<(&SpiderAnimation, &SpiderGun, Entity)>,
     children: Query<&Children>,
-    gamepads: Query<&Gamepad>,
-    keyboard: Res<ButtonInput<KeyCode>>,
     mut players: Query<&mut AnimationPlayer>,
 ) {
-    use super::data::Controller;
-    for (animation, vehicle, entity) in animations.iter() {
-        let is_shooting = match vehicle.controller {
-            Controller::Keyboard => keyboard.pressed(KeyCode::Space),
-            Controller::Gamepad => {
-                let mut any_pressed = false;
-                for gamepad in gamepads.iter() {
-                    let west_button = gamepad.get(GamepadButton::West).unwrap();
-                    any_pressed |= west_button > 0.5;
-                }
-                any_pressed
-            }
-        };
-
+    for (animation, gun, entity) in animations.iter() {
+        let ww = if gun.is_shooting { 1.0 } else { 0.0 };
         for child in children.iter_descendants(entity) {
             if let Ok(mut player) = players.get_mut(child) {
                 // let mut set_playback = |node: AnimationNodeIndex, aa: bool| match aa {
@@ -82,7 +68,6 @@ pub fn update_animations(
                         warn!("failed to set weight");
                     }
                 };
-                let ww = if is_shooting { 1.0 } else { 0.0 };
                 try_set_weight(animation.node_idle, 1.0);
                 try_set_weight(animation.node_shoot, ww);
             }

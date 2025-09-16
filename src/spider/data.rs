@@ -57,3 +57,8 @@ pub struct SpiderTheme {
     pub color_aa: LinearRgba,
     pub color_bb: LinearRgba,
 }
+
+#[derive(Component, Default)]
+pub struct SpiderGun {
+    pub is_shooting: bool,
+}

@@ -1,6 +1,7 @@
 mod anim;
 mod data;
 mod gizmos;
+mod gun;
 mod leg;
 mod physics;
 mod theme;
@@ -27,6 +28,7 @@ impl Plugin for SpiderPlugin {
                 reset_vehicles,
                 physics::update_vehicles,
                 leg::update_legs,
+                gun::update_guns,
                 anim::update_animations,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
@@ -84,6 +86,7 @@ fn populate_spiders(
             },
             data::SpiderTheme { color_aa, color_bb },
             data::SpiderLegs::default(),
+            data::SpiderGun::default(),
             Transform::IDENTITY,
         ));
 
