@@ -66,7 +66,7 @@ pub fn update_guns_00(
     use super::data::Controller;
     for (mut gun, vehicle) in guns.iter_mut() {
         gun.is_shooting = match vehicle.controller {
-            Controller::Keyboard => keyboard.pressed(KeyCode::Space),
+            Controller::Keyboard => keyboard.pressed(KeyCode::ControlLeft),
             Controller::Gamepad => {
                 let mut any_pressed = false;
                 for gamepad in gamepads.iter() {
