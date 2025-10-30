@@ -11,6 +11,7 @@ use bevy::prelude::*;
 use bevy::scene::SceneInstanceReady;
 
 use super::leg::SPIDER_LEG_LENGTH;
+use super::hits::SPIDER_BODY_RADIUS;
 
 use bevy::color::palettes::css::*;
 
@@ -52,7 +53,7 @@ pub fn display_vehicles(
         return;
     }
     for vehicle in vehicles.iter() {
-        gizmos.sphere(lift(vehicle.position_current), 2.0, GREEN_YELLOW);
+        gizmos.sphere(lift(vehicle.position_current), SPIDER_BODY_RADIUS, GREEN_YELLOW);
     }
 }
 

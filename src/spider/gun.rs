@@ -8,6 +8,8 @@ use bevy::scene::SceneInstanceReady;
 
 use bevy::color::palettes::tailwind::*;
 
+const SPIDER_BULLET_DIAM: f32 = 0.2; // m
+pub const SPIDER_BULLET_HALF_LENGTH: f32 = 0.5; // m
 const SPIDER_BULLET_SPEED: f32 = 100.0; // m / s
 const SPIDER_BULLET_DESPAWN_RADIUS: f32 = 150.0; // m
 const SPIDER_BULLET_DELAY: f64 = 20e-3; // s
@@ -39,7 +41,11 @@ pub fn populate_gun(
         entity.unwrap()
     };
 
-    let bullet_mesh = Cuboid::from_size(vec3(0.2, 1.0, 0.2));
+    let bullet_mesh = Cuboid::from_size(vec3(
+        SPIDER_BULLET_DIAM,
+        SPIDER_BULLET_HALF_LENGTH * 2.0,
+        SPIDER_BULLET_DIAM,
+    ));
     let bullet_mesh = meshes.add(bullet_mesh);
 
     let bullet_material = StandardMaterial {
@@ -61,10 +67,10 @@ pub fn populate_gun(
 pub fn update_guns_00(
     gamepads: Query<&Gamepad>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut guns: Query<(&mut SpiderGun, &SpiderVehicle)>,
+    mut guns_and_vehicles: Query<(&mut SpiderGun, &SpiderVehicle)>,
 ) {
     use super::data::Controller;
-    for (mut gun, vehicle) in guns.iter_mut() {
+    for (mut gun, vehicle) in guns_and_vehicles.iter_mut() {
         gun.is_shooting = match vehicle.controller {
             Controller::Keyboard => keyboard.pressed(KeyCode::ControlLeft),
             Controller::Gamepad => {

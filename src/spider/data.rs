@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use std::collections::BTreeMap;
 
+#[derive(Debug, PartialEq)]
 pub enum Controller {
     Gamepad,
     Keyboard,

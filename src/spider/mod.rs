@@ -2,6 +2,7 @@ mod anim;
 mod data;
 mod gizmos;
 mod gun;
+mod hits;
 mod leg;
 mod physics;
 mod theme;
@@ -32,6 +33,7 @@ impl Plugin for SpiderPlugin {
                 gun::update_guns_01,
                 gun::update_guns_02,
                 gun::update_guns_03,
+                hits::detect_hits,
                 anim::update_animations,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
