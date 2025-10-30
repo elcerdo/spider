@@ -3,7 +3,6 @@ use bevy::prelude::*;
 
 use kd_tree::{KdPoint, KdTree};
 
-use super::data::Controller;
 use super::data::SpiderBullet;
 use super::data::SpiderVehicle;
 
@@ -129,7 +128,7 @@ impl KdPoint for BBox {
 }
 
 pub fn detect_hits(
-    vehicles: Query<(&SpiderVehicle, &Transform)>,
+    mut vehicles: Query<(&mut SpiderVehicle, &Transform)>,
     bullets: Query<(&SpiderBullet, &Transform)>,
 ) {
     let mut bullet_bboxes = vec![];
@@ -139,16 +138,10 @@ pub fn detect_hits(
     let bullets_kdtree = KdTree::build_by_ordered_float(bullet_bboxes);
     // assert!(!bullets_kdtree.is_empty());
 
-    for (vehicle, transform) in vehicles.iter() {
+    for (mut vehicle, transform) in vehicles.iter_mut() {
         let vehicle_bbox = BBox::from_vehicle(&transform.translation);
         // let closest_segment = bullets_kdtree.nearest(&vehicle_bbox).unwrap();
         let foo = bullets_kdtree.within_radius(&vehicle_bbox, SPIDER_BODY_RADIUS);
-        if !foo.is_empty() && vehicle.controller != Controller::Keyboard {
-            log::warn!(
-                "vehicle {:?} hit by {} bullets",
-                vehicle.controller,
-                foo.len()
-            );
-        }
+        vehicle.num_hits += foo.len();
     }
 }

@@ -22,3 +22,16 @@ pub fn make_default_node() -> Node {
         ..default()
     }
 }
+
+pub fn make_wide_node() -> Node {
+    use bevy::prelude::*;
+    Node {
+        border: UiRect::all(Val::Px(1.0)),
+        padding: UiRect::all(Val::Px(4.0)),
+        margin: UiRect::top(Val::Px(5.0)),
+        width: Val::Px(300.0),
+        align_items: AlignItems::Start,
+        justify_content: JustifyContent::Start,
+        ..default()
+    }
+}

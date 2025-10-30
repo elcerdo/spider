@@ -16,6 +16,7 @@ pub struct SpiderVehicle {
     pub position_current: Vec2,
     angle_initial: f32,
     pub angle_current: f32,
+    pub num_hits: usize,
 }
 
 impl SpiderVehicle {
@@ -27,6 +28,7 @@ impl SpiderVehicle {
             position_current: pos,
             angle_initial: angle,
             angle_current: angle,
+            num_hits: 0,
         }
     }
 
@@ -34,6 +36,7 @@ impl SpiderVehicle {
         self.position_previous = self.position_initial;
         self.position_current = self.position_initial;
         self.angle_current = self.angle_initial;
+        self.num_hits = 0;
     }
 }
 

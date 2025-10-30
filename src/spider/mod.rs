@@ -1,5 +1,5 @@
 mod anim;
-mod data;
+pub mod data;
 mod gizmos;
 mod gun;
 mod hits;

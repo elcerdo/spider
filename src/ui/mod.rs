@@ -1,6 +1,7 @@
 mod checkbox;
 mod colors;
 mod combobox;
+mod labels;
 // mod game_done_screen;
 // mod track_selection_menu;
 
@@ -10,6 +11,8 @@ use checkbox::UiCheckbox;
 
 // pub use game_done_screen::GameDoneScreenPlugin;
 // pub use track_selection_menu::TrackSelectionMenuPlugin;
+
+use super::spider::data::SpiderVehicle;
 
 pub struct UiPlugin;
 
@@ -23,6 +26,7 @@ impl Plugin for UiPlugin {
 #[derive(Resource)]
 pub struct UiState {
     toggle_gizmos: Entity,
+    status_label: Entity,
     pub display_gizmos: bool,
 }
 
@@ -32,10 +36,12 @@ fn populate_ui(mut commands: Commands) {
         right: Val::Px(5.0),
         top: Val::Px(5.0),
         flex_direction: FlexDirection::Column,
-        align_items: AlignItems::FlexStart,
+        align_items: AlignItems::FlexEnd,
         justify_content: JustifyContent::FlexEnd,
         ..default()
     });
+
+    let status_label = labels::make(&mut ui_frame, "status");
 
     combobox::make(&mut ui_frame, vec!["aa", "bb", "cc"]);
     combobox::make(&mut ui_frame, vec!["x", "yy", "zzz", "wwww"]);
@@ -44,11 +50,24 @@ fn populate_ui(mut commands: Commands) {
 
     commands.insert_resource(UiState {
         toggle_gizmos,
+        status_label,
         display_gizmos: false,
     });
 }
 
-fn update(mut ui_state: ResMut<UiState>, checkboxes: Query<&UiCheckbox>) {
+fn update(
+    mut ui_state: ResMut<UiState>,
+    mut texts: Query<&mut Text>,
+    checkboxes: Query<&UiCheckbox>,
+    vehicles: Query<&SpiderVehicle>,
+) {
     let foo = checkboxes.get(ui_state.toggle_gizmos).unwrap();
     ui_state.display_gizmos = foo.checked;
+
+    let mut labels = vec![];
+    for vehicle in vehicles {
+        labels.push(format!("{:04} {:?}", vehicle.num_hits, vehicle.controller));
+    }
+    let mut foo = texts.get_mut(ui_state.status_label).unwrap();
+    **foo = labels.join("\n");
 }
