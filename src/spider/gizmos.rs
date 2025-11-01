@@ -10,8 +10,8 @@ use bevy::prelude::*;
 #[cfg(feature = "debug_gizmos")]
 use bevy::scene::SceneInstanceReady;
 
+use super::hits::SPIDER_HIT_RADIUS;
 use super::leg::SPIDER_LEG_LENGTH;
-use super::hits::SPIDER_BODY_RADIUS;
 
 use bevy::color::palettes::css::*;
 
@@ -53,7 +53,11 @@ pub fn display_vehicles(
         return;
     }
     for vehicle in vehicles.iter() {
-        gizmos.sphere(lift(vehicle.position_current), SPIDER_BODY_RADIUS, GREEN_YELLOW);
+        gizmos.sphere(
+            lift(vehicle.position_current),
+            SPIDER_HIT_RADIUS,
+            GREEN_YELLOW,
+        );
     }
 }
 

@@ -64,7 +64,7 @@ pub fn populate_gun(
     });
 }
 
-pub fn update_guns_00(
+pub fn update_guns(
     gamepads: Query<&Gamepad>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut guns_and_vehicles: Query<(&mut SpiderGun, &SpiderVehicle)>,
@@ -85,7 +85,7 @@ pub fn update_guns_00(
     }
 }
 
-pub fn update_guns_01(
+pub fn spawn_bullets(
     time: Res<Time>,
     mut guns: Query<&mut SpiderGun>,
     mut commands: Commands,
@@ -121,17 +121,17 @@ pub fn update_guns_01(
     }
 }
 
-pub fn update_guns_02(
-    mut bullets_and_transforms: Query<(&SpiderBullet, &mut Transform)>,
+pub fn update_bullets(
+    mut bullets_and_transforms: Query<(&mut SpiderBullet, &mut Transform)>,
     time: Res<Time>,
 ) {
     let dt = time.delta_secs();
-    for (bullet, mut transform) in bullets_and_transforms.iter_mut() {
+    for (mut bullet, mut transform) in bullets_and_transforms.iter_mut() {
         transform.translation += bullet.direction * SPIDER_BULLET_SPEED * dt;
     }
 }
 
-pub fn update_guns_03(
+pub fn despawn_far_bullets(
     bullets_and_transforms: Query<(&SpiderBullet, &Transform, Entity)>,
     mut commands: Commands,
 ) {

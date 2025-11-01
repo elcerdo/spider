@@ -9,7 +9,8 @@ use super::data::SpiderVehicle;
 
 use super::gun::SPIDER_BULLET_HALF_LENGTH;
 
-pub const SPIDER_BODY_RADIUS: f32 = 2.0;
+pub const SPIDER_HIT_RADIUS: f32 = 2.0; // m
+const SPIDER_ARMED_RADIUS: f32 = 2.5; // m 
 
 #[derive(Default)]
 enum BBoxPrimitive {
@@ -18,9 +19,7 @@ enum BBoxPrimitive {
     Bullet {
         flip: Vec2,
     },
-    Vehicle {
-        radius: f32,
-    },
+    Vehicle,
 }
 
 #[derive(Default)]
@@ -47,14 +46,11 @@ impl BBox {
                     return false;
                 }
             }
-            BBoxPrimitive::Vehicle { radius } => {
+            BBoxPrimitive::Vehicle => {
                 if self.low.x != self.high.x {
                     return false;
                 }
                 if self.low.y != self.high.y {
-                    return false;
-                }
-                if radius <= &0.0 {
                     return false;
                 }
             }
@@ -94,9 +90,7 @@ impl BBox {
         let ret = Self {
             low: position.xz(),
             high: position.xz(),
-            primitive: BBoxPrimitive::Vehicle {
-                radius: SPIDER_BODY_RADIUS,
-            },
+            primitive: BBoxPrimitive::Vehicle,
         };
         assert!(ret.valid());
         ret
@@ -119,16 +113,17 @@ impl KdPoint for BBox {
 }
 
 fn check_intersection(aa: &BBox, bb: &BBox) -> bool {
+    // FIXME impl proper segement circle intersection
     let BBoxPrimitive::Bullet { flip: _aa_flip } = aa.primitive else {
         unreachable!()
     };
     let aa_center = (aa.high + aa.low) / 2.0;
-    let BBoxPrimitive::Vehicle { radius: bb_radius } = bb.primitive else {
+    let BBoxPrimitive::Vehicle = bb.primitive else {
         unreachable!()
     };
     assert!((bb.high - bb.low).norm() < 1e-5);
     let bb_center = (bb.high + bb.low) / 2.0;
-    (bb_center - aa_center).norm() < bb_radius
+    (bb_center - aa_center).norm() < SPIDER_HIT_RADIUS
 }
 
 pub fn detect_hits(
@@ -137,14 +132,16 @@ pub fn detect_hits(
 ) {
     let mut bullet_bboxes = vec![];
     for (bullet, transform) in bullets.iter() {
-        bullet_bboxes.push(BBox::from_bullet(&transform.translation, &bullet.direction));
+        if (transform.translation - bullet.position_initial).norm() > SPIDER_ARMED_RADIUS {
+            bullet_bboxes.push(BBox::from_bullet(&transform.translation, &bullet.direction));
+        }
     }
     let bullets_kdtree = KdTree::build_by_ordered_float(bullet_bboxes);
     // assert!(!bullets_kdtree.is_empty());
 
     for (mut vehicle, transform) in vehicles.iter_mut() {
         let vehicle_bbox = &BBox::from_vehicle(&transform.translation);
-        let bullet_bboxes = bullets_kdtree.within_radius(vehicle_bbox, 2.0 * SPIDER_BODY_RADIUS);
+        let bullet_bboxes = bullets_kdtree.within_radius(vehicle_bbox, 2.0 * SPIDER_HIT_RADIUS);
         let bullet_bboxes: Vec<&BBox> = bullet_bboxes
             .into_iter()
             .filter(|bullet_bbox| check_intersection(bullet_bbox, vehicle_bbox))
