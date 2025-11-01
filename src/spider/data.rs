@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use std::collections::BTreeMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Controller {
     Gamepad,
     Keyboard,
@@ -73,6 +73,7 @@ pub struct SpiderGun {
 
 #[derive(Component)]
 pub struct SpiderBullet {
+    pub controller: Controller,
     pub position_initial: Vec3,
     pub direction: Vec3,
 }

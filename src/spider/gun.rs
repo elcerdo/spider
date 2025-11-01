@@ -87,12 +87,12 @@ pub fn update_guns(
 
 pub fn spawn_bullets(
     time: Res<Time>,
-    mut guns: Query<&mut SpiderGun>,
+    mut guns_and_vehicles: Query<(&mut SpiderGun, &SpiderVehicle)>,
     mut commands: Commands,
     global_transforms: Query<&GlobalTransform>,
 ) {
     let top = time.elapsed_secs_f64();
-    for mut gun in guns.iter_mut() {
+    for (mut gun, vehicle) in guns_and_vehicles.iter_mut() {
         let delta = top - gun.last_top;
         gun.last_top = if gun.is_shooting && delta > SPIDER_BULLET_DELAY {
             debug!("pop {delta}");
@@ -105,8 +105,10 @@ pub fn spawn_bullets(
             let position_initial = transform.transform_point(Vec3::ZERO);
             let position_forward = transform.transform_point(Vec3::Y);
             let direction = (position_forward - position_initial).normalize();
+            let controller = vehicle.controller.clone();
             commands.spawn((
                 SpiderBullet {
+                    controller,
                     position_initial,
                     direction,
                 },
@@ -122,11 +124,11 @@ pub fn spawn_bullets(
 }
 
 pub fn update_bullets(
-    mut bullets_and_transforms: Query<(&mut SpiderBullet, &mut Transform)>,
+    mut bullets_and_transforms: Query<(&SpiderBullet, &mut Transform)>,
     time: Res<Time>,
 ) {
     let dt = time.delta_secs();
-    for (mut bullet, mut transform) in bullets_and_transforms.iter_mut() {
+    for (bullet, mut transform) in bullets_and_transforms.iter_mut() {
         transform.translation += bullet.direction * SPIDER_BULLET_SPEED * dt;
     }
 }
