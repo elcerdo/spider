@@ -18,6 +18,7 @@ enum BBoxPrimitive {
     None,
     Bullet {
         controller: Controller,
+        entity: Entity,
         flip: Vec2,
     },
     Vehicle {
@@ -64,7 +65,12 @@ impl BBox {
         true
     }
 
-    fn from_bullet(controller: Controller, position: &Vec3, direction: &Vec3) -> Self {
+    fn from_bullet(
+        controller: Controller,
+        entity: Entity,
+        position: &Vec3,
+        direction: &Vec3,
+    ) -> Self {
         use std::mem::swap;
         assert!(direction.y.abs() < 1e-5);
         let position = position.xz();
@@ -83,7 +89,11 @@ impl BBox {
         let ret = Self {
             low,
             high,
-            primitive: BBoxPrimitive::Bullet { controller, flip },
+            primitive: BBoxPrimitive::Bullet {
+                controller,
+                entity,
+                flip,
+            },
         };
         assert!(ret.valid());
         ret
@@ -118,8 +128,8 @@ impl KdPoint for BBox {
 fn check_intersection(aa: &BBox, bb: &BBox) -> bool {
     // FIXME impl proper segement circle intersection
     let BBoxPrimitive::Bullet {
-        flip: _aa_flip,
         controller: aa_controller,
+        ..
     } = &aa.primitive
     else {
         unreachable!()
@@ -139,14 +149,16 @@ fn check_intersection(aa: &BBox, bb: &BBox) -> bool {
     (bb_center - aa_center).norm() < SPIDER_HIT_RADIUS
 }
 
-pub fn detect_hits(
+pub fn resolve_hits(
+    mut commands: Commands,
     mut vehicles: Query<(&mut SpiderVehicle, &Transform)>,
-    bullets: Query<(&SpiderBullet, &Transform)>,
+    bullets: Query<(&SpiderBullet, &Transform, Entity)>,
 ) {
     let mut bullet_bboxes = vec![];
-    for (bullet, transform) in bullets.iter() {
+    for (bullet, transform, entity) in bullets.iter() {
         bullet_bboxes.push(BBox::from_bullet(
             bullet.controller.clone(),
+            entity,
             &transform.translation,
             &bullet.direction,
         ));
@@ -162,5 +174,15 @@ pub fn detect_hits(
             .filter(|bullet_bbox| check_intersection(bullet_bbox, vehicle_bbox))
             .collect();
         vehicle.num_hits += bullet_bboxes.len();
+        bullet_bboxes.iter().for_each(|bullet_bbox| {
+            let BBoxPrimitive::Bullet {
+                entity: bullet_entity,
+                ..
+            } = bullet_bbox.primitive
+            else {
+                unreachable!()
+            };
+            commands.entity(bullet_entity).despawn();
+        });
     }
 }
