@@ -1,5 +1,5 @@
 #[cfg(feature = "debug_scene")]
-mod twister;
+pub mod twister;
 
 use crate::global_state::GlobalState;
 use crate::material::parallax_material;
@@ -24,14 +24,10 @@ impl bevy::prelude::Plugin for BackgroundPlugin {
                     populate_lights_and_cameras,
                     #[cfg(feature = "debug_scene")]
                     populate_debug_scene,
-                    #[cfg(feature = "debug_scene")]
-                    twister::populate,
                 )
                     .chain(),
             );
             app.add_systems(OnExit(state), depopulate_background);
-            #[cfg(feature = "debug_scene")]
-            app.add_systems(Update, twister::animate.run_if(in_state(state)));
         }
     }
 }

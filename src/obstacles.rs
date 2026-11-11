@@ -14,12 +14,12 @@ impl Plugin for ObstaclePlugin {
 
 #[derive(Component)]
 pub(crate) struct WallLow {
-    pub brick_wall_size: Vec3,
+    pub brick_wall_size: Vec2,
 }
 
 #[derive(Component)]
 pub(crate) struct WallHigh {
-    pub brick_wall_size: Vec3,
+    pub brick_wall_size: Vec2,
 }
 
 fn depopulate(mut commands: Commands, query: Query<Entity, Or<(With<WallLow>, With<WallHigh>)>>) {
@@ -43,6 +43,7 @@ fn populate(
             MeshMaterial3d(brick_wall_material.clone()),
             Transform::from_xyz(position.x, brick_wall_size.y / 2.0, position.y),
         ));
+        let brick_wall_size = brick_wall_size.xz();
         if is_high {
             wall_entity.insert(WallHigh { brick_wall_size });
         } else {

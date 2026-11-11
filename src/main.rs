@@ -32,7 +32,10 @@ fn main() {
     app.add_plugins(ui::UiPlugin);
 
     #[cfg(feature = "debug_scene")]
-    app.add_plugins(simu::SimuPlugin);
+    {
+        app.add_plugins(background::twister::TwisterPlugin);
+        app.add_plugins(simu::SimuPlugin);
+    }
 
     #[cfg(not(target_family = "wasm"))]
     {

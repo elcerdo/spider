@@ -1,5 +1,6 @@
-mod anim;
 pub mod data;
+
+mod anim;
 mod gizmos;
 mod gun;
 mod hits;
@@ -7,7 +8,9 @@ mod leg;
 mod physics;
 mod theme;
 
-use super::global_state::GlobalState;
+use bevy::input::gamepad::{AxisSettings, GamepadSettings};
+
+use crate::global_state::GlobalState;
 
 use bevy::prelude::*;
 
@@ -22,7 +25,7 @@ pub struct SpiderPlugin;
 
 impl Plugin for SpiderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(physics::configure_gamepad);
+        app.add_observer(configure_gamepad);
         app.add_systems(Startup, populate_spiders);
         app.add_systems(
             Update,
@@ -48,6 +51,12 @@ impl Plugin for SpiderPlugin {
 }
 
 //////////////////////////////////////////////////////////////////////
+
+fn configure_gamepad(trigger: On<Add<GamepadSettings>>, mut settings: Query<&mut GamepadSettings>) {
+    let mut settings = settings.get_mut(trigger.entity).unwrap();
+    settings.default_axis_settings =
+        AxisSettings::new(-1.0, -0.05, 0.05, 1.0, 0.0).expect("valid 5% dead-zone axis settings");
+}
 
 fn reset_vehicles(
     mut vehicles: Query<&mut data::SpiderVehicle>,

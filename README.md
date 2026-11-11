@@ -16,7 +16,6 @@
 
 * Low walls block vehicles but allow bullets through.
 * High walls block both vehicles and bullets.
-* Bullet-wall collisions use the current bullet segment, not a sweep between frames.
 
 ## Keyboard controls
 

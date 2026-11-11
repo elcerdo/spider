@@ -220,10 +220,10 @@ pub fn resolve_wall_collisions(
     let wall_bboxes: Vec<_> = low_walls
         .iter()
         .map(|(entity, transform, wall)| {
-            BBox::from_wall(entity, false, wall.brick_wall_size.xz(), transform)
+            BBox::from_wall(entity, false, wall.brick_wall_size, transform)
         })
         .chain(high_walls.iter().map(|(entity, transform, wall)| {
-            BBox::from_wall(entity, true, wall.brick_wall_size.xz(), transform)
+            BBox::from_wall(entity, true, wall.brick_wall_size, transform)
         }))
         .collect();
     if wall_bboxes.is_empty() {
@@ -323,10 +323,10 @@ pub fn resolve_vehicle_hits(
         ));
     }
     bboxes.extend(low_walls.iter().map(|(entity, transform, wall)| {
-        BBox::from_wall(entity, false, wall.brick_wall_size.xz(), transform)
+        BBox::from_wall(entity, false, wall.brick_wall_size, transform)
     }));
     bboxes.extend(high_walls.iter().map(|(entity, transform, wall)| {
-        BBox::from_wall(entity, true, wall.brick_wall_size.xz(), transform)
+        BBox::from_wall(entity, true, wall.brick_wall_size, transform)
     }));
     let kdtree = KdTree::build_by_ordered_float(bboxes);
     let mut blocked_bullets = Vec::new();
@@ -360,11 +360,11 @@ pub fn resolve_vehicle_hits(
             else {
                 return false;
             };
-            let (_, transform, wall) = high_walls
+            let (_, transform, _) = high_walls
                 .get(*wall_entity)
                 .expect("registered high wall must have a transform");
             let center_y = transform.translation.y;
-            let half_height = wall.brick_wall_size.y * transform.scale.y.abs() / 2.0;
+            let half_height = transform.translation.y.abs() * transform.scale.y.abs();
             (bullet_transform.translation.y - center_y).abs() <= half_height
                 && check_intersection(bullet_bbox, wall_bbox)
         });
