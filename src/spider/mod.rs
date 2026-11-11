@@ -22,6 +22,7 @@ pub struct SpiderPlugin;
 
 impl Plugin for SpiderPlugin {
     fn build(&self, app: &mut App) {
+        app.add_observer(physics::configure_gamepad);
         app.add_systems(Startup, populate_spiders);
         app.add_systems(
             Update,

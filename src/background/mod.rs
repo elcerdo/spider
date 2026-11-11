@@ -1,3 +1,4 @@
+#[cfg(feature = "debug_scene")]
 mod twister;
 
 use crate::global_state::GlobalState;
@@ -21,11 +22,15 @@ impl bevy::prelude::Plugin for BackgroundPlugin {
                 (
                     populate_background,
                     populate_lights_and_cameras,
+                    #[cfg(feature = "debug_scene")]
+                    populate_debug_scene,
+                    #[cfg(feature = "debug_scene")]
                     twister::populate,
                 )
                     .chain(),
             );
             app.add_systems(OnExit(state), depopulate_background);
+            #[cfg(feature = "debug_scene")]
             app.add_systems(Update, twister::animate.run_if(in_state(state)));
         }
     }
@@ -77,7 +82,8 @@ fn populate_lights_and_cameras(mut commands: Commands, asset_server: Res<AssetSe
     ));
 }
 
-fn populate_background(
+#[cfg(feature = "debug_scene")]
+fn populate_debug_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
     mut images: ResMut<Assets<bevy::image::Image>>,
@@ -110,9 +116,20 @@ fn populate_background(
         })),
         Transform::from_xyz(12.0, 0.5, -2.0),
     ));
+}
 
+fn populate_background(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
+    mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
+    asset_server: Res<bevy::asset::AssetServer>,
+) {
     // parallal
-    let parallal_material = materials.add(parallax_material::make(asset_server, 2.0));
+    let parallal_material = materials.add(parallax_material::make(
+        &asset_server,
+        2.0,
+        "parallax_example/cube",
+    ));
     commands.spawn((
         BackgroundMarker,
         Mesh3d(
@@ -124,6 +141,17 @@ fn populate_background(
         ),
         MeshMaterial3d(parallal_material),
         Transform::from_xyz(3.0, 2.0, 18.0).with_scale(Vec3::ONE * 4.0),
+    ));
+
+    // low brick wall
+    let brick_wall_material =
+        materials.add(parallax_material::make(&asset_server, 1.0, "brick_wall"));
+    let brick_wall_size = Vec3::new(10.0, 1.5, 0.5);
+    commands.spawn((
+        BackgroundMarker,
+        Mesh3d(meshes.add(make_brick_wall_mesh(brick_wall_size))),
+        MeshMaterial3d(brick_wall_material),
+        Transform::from_xyz(-4.0, 0.75, 12.0),
     ));
 
     // plain plane
@@ -145,6 +173,56 @@ fn populate_background(
         })),
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
+}
+
+fn make_brick_wall_mesh(size: Vec3) -> Mesh {
+    use bevy::mesh::VertexAttributeValues;
+
+    let mut mesh = Mesh::from(Cuboid::from_size(size));
+    let Some(VertexAttributeValues::Float32x3(positions)) =
+        mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+    else {
+        unreachable!("Cuboid positions are Float32x3");
+    };
+    let Some(VertexAttributeValues::Float32x3(normals)) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
+    else {
+        unreachable!("Cuboid normals are Float32x3");
+    };
+    let half_size = size * 0.5;
+    let uvs = positions
+        .iter()
+        .zip(normals)
+        .map(|(position, normal)| {
+            let [x, y, z] = *position;
+            let u = if normal[0].abs() > 0.5 {
+                if normal[0] > 0.0 {
+                    half_size.z - z
+                } else {
+                    z + half_size.z
+                }
+            } else if normal[2] < 0.0 {
+                half_size.x - x
+            } else {
+                x + half_size.x
+            };
+            let v = if normal[1].abs() > 0.5 {
+                if normal[1] > 0.0 {
+                    // Use the upper course as a single cap row across the wall's thickness.
+                    size.y * (0.75 + 0.25 * (half_size.z - z) / size.z)
+                } else {
+                    z + half_size.z
+                }
+            } else {
+                y + half_size.y
+            };
+            // One texture tile contains four brick rows and spans the wall's height.
+            [u / size.y, v / size.y]
+        })
+        .collect::<Vec<_>>();
+
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs.clone());
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, uvs);
+    mesh.with_generated_tangents().unwrap()
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -218,6 +296,7 @@ fn move_camera(
 //////////////////////////////////////////////////////////////////////
 
 /// Creates a colorful test pattern
+#[cfg(feature = "debug_scene")]
 fn make_uv_debug_texture() -> bevy::image::Image {
     use bevy::asset::RenderAssetUsages;
     use bevy::render::render_resource::Extent3d;
@@ -252,6 +331,7 @@ fn make_uv_debug_texture() -> bevy::image::Image {
 }
 
 #[rustfmt::skip]
+#[cfg(feature = "debug_scene")]
 fn make_cube_mesh() -> bevy::mesh::Mesh {
     use bevy::mesh::Indices;
     use bevy::mesh::Mesh;

@@ -1,17 +1,15 @@
-use super::super::ui::UiState;
-use super::data::SpiderGun;
-use super::data::SpiderLegs;
-use super::data::SpiderVehicle;
-use super::physics::lift;
-
+use super::{
+    super::ui::UiState,
+    data::{SpiderGun, SpiderLegs, SpiderVehicle},
+    hits::SPIDER_HIT_RADIUS,
+    leg::SPIDER_LEG_LENGTH,
+    physics::lift,
+};
 use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
 
 #[cfg(feature = "debug_gizmos")]
 use bevy::world_serialization::WorldInstanceReady;
-
-use super::hits::SPIDER_HIT_RADIUS;
-use super::leg::SPIDER_LEG_LENGTH;
 
 use bevy::color::palettes::css::*;
 

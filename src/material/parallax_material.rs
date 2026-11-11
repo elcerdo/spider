@@ -1,7 +1,10 @@
 use bevy::asset::AssetServer;
-use bevy::prelude::Res;
 
-pub fn make(asset_server: Res<AssetServer>, scale: f32) -> bevy::pbr::StandardMaterial {
+pub fn make(
+    asset_server: &AssetServer,
+    scale: f32,
+    texture_prefix: &str,
+) -> bevy::pbr::StandardMaterial {
     use bevy::image::ImageAddressMode;
     use bevy::image::ImageLoaderSettings;
     use bevy::image::ImageSampler;
@@ -25,7 +28,7 @@ pub fn make(asset_server: Res<AssetServer>, scale: f32) -> bevy::pbr::StandardMa
                         ..ImageLoaderSettings::default()
                     }
                 })
-                .load("textures/parallax_example/cube_color.png"),
+                .load(format!("textures/{texture_prefix}_color.png")),
         ),
         normal_map_channel: UvChannel::Uv1,
         normal_map_texture: Some(
@@ -44,7 +47,7 @@ pub fn make(asset_server: Res<AssetServer>, scale: f32) -> bevy::pbr::StandardMa
                         ..ImageLoaderSettings::default()
                     }
                 })
-                .load("textures/parallax_example/cube_normal.png"),
+                .load(format!("textures/{texture_prefix}_normal.png")),
         ),
         depth_map: Some(
             asset_server
@@ -59,7 +62,7 @@ pub fn make(asset_server: Res<AssetServer>, scale: f32) -> bevy::pbr::StandardMa
                         ..ImageLoaderSettings::default()
                     }
                 })
-                .load("textures/parallax_example/cube_depth.png"),
+                .load(format!("textures/{texture_prefix}_depth.png")),
         ),
         parallax_depth_scale: 0.1,
         uv_transform: Affine2::from_scale(Vec2::ONE * scale),
