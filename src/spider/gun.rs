@@ -76,8 +76,8 @@ pub fn update_guns(
             Controller::Gamepad => {
                 let mut any_pressed = false;
                 for gamepad in gamepads.iter() {
-                    let west_button = gamepad.get(GamepadButton::West).unwrap();
-                    any_pressed |= west_button > 0.5;
+                    let right_trigger = gamepad.get(GamepadButton::RightTrigger2).unwrap();
+                    any_pressed |= right_trigger > 0.5;
                 }
                 any_pressed
             }
