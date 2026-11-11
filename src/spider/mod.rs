@@ -83,7 +83,7 @@ fn populate_spiders(
                                color_aa: LinearRgba,
                                color_bb: LinearRgba| {
         let mut scene = commands.spawn((
-            SceneRoot(scene.clone()),
+            WorldAssetRoot(scene.clone()),
             data::SpiderVehicle::new(pos, angle, controller),
             data::SpiderAnimation {
                 node_idle,

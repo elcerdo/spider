@@ -3,7 +3,7 @@ use super::data::SpiderLegs;
 
 use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
-use bevy::scene::SceneInstanceReady;
+use bevy::world_serialization::WorldInstanceReady;
 
 pub const SPIDER_LEG_LENGTH: f32 = 3.5;
 const SPIDER_STEP_LENGTH: f32 = 1.0;
@@ -13,7 +13,7 @@ const SPIDER_STEP_LEAD: f32 = 0.25;
 use bevy::color::palettes::css::*;
 
 pub fn populate_legs(
-    trigger: Trigger<SceneInstanceReady>,
+    trigger: On<WorldInstanceReady>,
     children: Query<&Children>,
     names: Query<&Name>,
     parents: Query<&ChildOf>,
@@ -23,7 +23,7 @@ pub fn populate_legs(
 ) {
     info!("** populate legs **");
 
-    let target = trigger.target();
+    let target = trigger.entity;
 
     let mut legs = std::collections::BTreeMap::new();
     assert!(legs.len() == 0);

@@ -1,18 +1,18 @@
+use bevy::asset::RenderAssetUsages;
+use bevy::core_pipeline::schedule::camera_driver;
 use bevy::render::extract_component::{
     ComponentUniforms, ExtractComponent, ExtractComponentPlugin, UniformComponentPlugin,
 };
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
-use bevy::render::graph::CameraDriverLabel;
-use bevy::render::render_asset::{RenderAssetUsages, RenderAssets};
-use bevy::render::render_graph::{Node, RenderGraph, RenderLabel};
+use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::{
-    BindGroup, BindGroupEntries, BindGroupLayout, CachedComputePipelineId, ShaderType,
-    TextureFormat,
+    BindGroup, BindGroupEntries, BindGroupLayoutDescriptor, CachedComputePipelineId, PipelineCache,
+    ShaderType, TextureFormat,
     binding_types::{texture_storage_2d, uniform_buffer},
 };
-use bevy::render::renderer::RenderDevice;
+use bevy::render::renderer::{RenderContext, RenderDevice, RenderGraph};
 use bevy::render::texture::GpuImage;
-use bevy::render::{Render, RenderApp, RenderSet};
+use bevy::render::{Render, RenderApp, RenderSystems};
 
 use bevy::prelude::*;
 
@@ -26,6 +26,7 @@ const WORKGROUP_SIZE: u32 = 8;
 //////////////////////////////////////////////////////////////////////
 
 #[derive(Component, ShaderType, ExtractComponent, Clone)]
+#[extract_app(RenderApp)]
 struct SimuSettings {
     rng_seed: u32,
 }
@@ -37,11 +38,6 @@ impl Default for SimuSettings {
 }
 
 pub struct SimuPlugin;
-
-#[derive(Hash, Clone, Eq, PartialEq, Debug, RenderLabel)]
-enum SimuNodes {
-    Main,
-}
 
 impl Plugin for SimuPlugin {
     fn build(&self, app: &mut App) {
@@ -71,11 +67,12 @@ impl Plugin for SimuPlugin {
         let render_app = app.sub_app_mut(RenderApp);
         render_app.add_systems(
             Render,
-            (copy_triggers, update_bind_groups).in_set(RenderSet::PrepareBindGroups),
+            (copy_triggers, update_bind_groups).in_set(RenderSystems::PrepareBindGroups),
         );
-        let mut render_graph = render_app.world_mut().resource_mut::<RenderGraph>();
-        render_graph.add_node(SimuNodes::Main, MainNode::default());
-        render_graph.add_node_edge(SimuNodes::Main, CameraDriverLabel);
+        render_app
+            .init_resource::<MainState>()
+            .add_systems(Render, update_state.in_set(RenderSystems::Prepare))
+            .add_systems(RenderGraph, run_simulation.before(camera_driver));
     }
     fn finish(&self, app: &mut App) {
         info!("** simu_finish **");
@@ -98,6 +95,7 @@ fn update_simu_triggers(
 //////////////////////////////////////////////////////////////////////
 
 #[derive(Resource, Clone, ExtractResource)]
+#[extract_app(RenderApp)]
 struct SimuImages {
     image_a: Handle<Image>,
     image_b: Handle<Image>,
@@ -120,7 +118,7 @@ fn populate_simu_plane_and_images(
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        &[0, 0, 0, 255],
+        &[0; 16],
         TEXTURE_FORMAT,
         RenderAssetUsages::RENDER_WORLD,
     );
@@ -158,6 +156,7 @@ fn populate_simu_plane_and_images(
 //////////////////////////////////////////////////////////////////////
 
 #[derive(Resource, Clone, Default, ExtractResource)]
+#[extract_app(RenderApp)]
 struct SimuTriggers {
     should_reinit: bool,
 }
@@ -165,7 +164,7 @@ struct SimuTriggers {
 #[derive(Resource)]
 struct SimuPipeline {
     simu_triggers: SimuTriggers,
-    group_layout: BindGroupLayout,
+    group_layout: BindGroupLayoutDescriptor,
     init_pipeline: CachedComputePipelineId,
     update_pipeline: CachedComputePipelineId,
 }
@@ -174,11 +173,10 @@ impl FromWorld for SimuPipeline {
     fn from_world(world: &mut World) -> Self {
         use bevy::render::render_resource::*;
 
-        let render_device = world.resource::<RenderDevice>();
         let pipeline_cache = world.resource::<PipelineCache>();
 
-        let group_layout = render_device.create_bind_group_layout(
-            None,
+        let group_layout = BindGroupLayoutDescriptor::new(
+            "simu_layout",
             &BindGroupLayoutEntries::sequential(
                 ShaderStages::COMPUTE,
                 (
@@ -194,21 +192,19 @@ impl FromWorld for SimuPipeline {
         let init_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some(Cow::from("init_pipeline")),
             layout: vec![group_layout.clone()],
-            push_constant_ranges: Vec::new(),
             shader: shader.clone(),
-            shader_defs: vec![],
-            entry_point: Cow::from("init"),
+            entry_point: Some(Cow::from("init")),
             zero_initialize_workgroup_memory: false,
+            ..default()
         });
 
         let update_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some(Cow::from("update_pipeline")),
             layout: vec![group_layout.clone()],
-            push_constant_ranges: Vec::new(),
             shader,
-            shader_defs: vec![],
-            entry_point: Cow::from("update"),
+            entry_point: Some(Cow::from("update")),
             zero_initialize_workgroup_memory: false,
+            ..default()
         });
 
         SimuPipeline {
@@ -239,29 +235,29 @@ fn update_bind_groups(
     simu_images: Res<SimuImages>,
     gpu_images: Res<RenderAssets<GpuImage>>,
     render_device: Res<RenderDevice>,
+    pipeline_cache: Res<PipelineCache>,
 ) {
-    let simu_binding = simu_settings.uniforms().binding();
-    assert!(simu_binding.is_some());
-
-    let view_a = gpu_images.get(&simu_images.image_a).unwrap();
-    let view_b = gpu_images.get(&simu_images.image_b).unwrap();
+    let (Some(simu_binding), Some(view_a), Some(view_b)) = (
+        simu_settings.uniforms().binding(),
+        gpu_images.get(&simu_images.image_a),
+        gpu_images.get(&simu_images.image_b),
+    ) else {
+        return;
+    };
+    let layout = pipeline_cache.get_bind_group_layout(&simu_pipeline.group_layout);
     let group_a_to_b = render_device.create_bind_group(
         Some("group_a_to_b"),
-        &simu_pipeline.group_layout,
+        &layout,
         &BindGroupEntries::sequential((
             &view_a.texture_view,
             &view_b.texture_view,
-            simu_binding.clone().unwrap(),
+            simu_binding.clone(),
         )),
     );
     let group_b_to_a = render_device.create_bind_group(
         Some("group_b_to_a"),
-        &simu_pipeline.group_layout,
-        &BindGroupEntries::sequential((
-            &view_b.texture_view,
-            &view_a.texture_view,
-            simu_binding.unwrap(),
-        )),
+        &layout,
+        &BindGroupEntries::sequential((&view_b.texture_view, &view_a.texture_view, simu_binding)),
     );
 
     // insert bind groups
@@ -273,7 +269,7 @@ fn update_bind_groups(
 
 //////////////////////////////////////////////////////////////////////
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 enum MainState {
     #[default]
     Loading,
@@ -281,103 +277,100 @@ enum MainState {
     Update(bool),
 }
 
-#[derive(Default)]
-struct MainNode {
-    state: MainState,
+fn update_state(
+    pipeline: Res<SimuPipeline>,
+    pipeline_cache: Res<PipelineCache>,
+    bind_groups: Option<Res<SimuBindGroups>>,
+    mut state: ResMut<MainState>,
+) {
+    use bevy::render::render_resource::*;
+
+    if bind_groups.is_none() {
+        return;
+    }
+    let should_reinit = pipeline.simu_triggers.should_reinit;
+
+    // if the corresponding pipeline has loaded, transition to the next stage
+    match *state {
+        MainState::Loading => {
+            let init_ok = matches!(
+                pipeline_cache.get_compute_pipeline_state(pipeline.init_pipeline),
+                CachedPipelineState::Ok(_)
+            );
+            let update_ok = matches!(
+                pipeline_cache.get_compute_pipeline_state(pipeline.update_pipeline),
+                CachedPipelineState::Ok(_)
+            );
+            if init_ok && update_ok {
+                *state = MainState::Init;
+            }
+        }
+        MainState::Init => {
+            *state = match should_reinit {
+                false => MainState::Update(true),
+                true => MainState::Init,
+            };
+        }
+        MainState::Update(flipped) => {
+            *state = match should_reinit {
+                false => MainState::Update(!flipped),
+                true => MainState::Init,
+            };
+        }
+    };
 }
 
-impl Node for MainNode {
-    fn update(&mut self, world: &mut World) {
-        use bevy::render::render_resource::*;
+fn run_simulation(
+    mut render_context: RenderContext,
+    pipeline: Res<SimuPipeline>,
+    bind_groups: Option<Res<SimuBindGroups>>,
+    pipeline_cache: Res<PipelineCache>,
+    state: Res<MainState>,
+) {
+    use bevy::render::render_resource::*;
 
-        let pipeline = world.resource::<SimuPipeline>();
-        let pipeline_cache = world.resource::<PipelineCache>();
+    let Some(bind_groups) = bind_groups else {
+        return;
+    };
 
-        let should_reinit = pipeline.simu_triggers.should_reinit;
+    let mut pass = render_context
+        .command_encoder()
+        .begin_compute_pass(&ComputePassDescriptor::default());
 
-        // if the corresponding pipeline has loaded, transition to the next stage
-        match self.state {
-            MainState::Loading => {
-                let init_ok = matches!(
-                    pipeline_cache.get_compute_pipeline_state(pipeline.init_pipeline),
-                    CachedPipelineState::Ok(_)
-                );
-                let update_ok = matches!(
-                    pipeline_cache.get_compute_pipeline_state(pipeline.init_pipeline),
-                    CachedPipelineState::Ok(_)
-                );
-                if init_ok && update_ok {
-                    self.state = MainState::Init;
-                }
-            }
-            MainState::Init => {
-                self.state = match should_reinit {
-                    false => MainState::Update(true),
-                    true => MainState::Init,
-                };
-            }
-            MainState::Update(flipped) => {
-                self.state = match should_reinit {
-                    false => MainState::Update(!flipped),
-                    true => MainState::Init,
-                };
-            }
-        };
-    }
-
-    fn run(
-        &self,
-        _graph_context: &mut bevy::render::render_graph::RenderGraphContext,
-        render_context: &mut bevy::render::renderer::RenderContext,
-        world: &World,
-    ) -> Result<(), bevy::render::render_graph::NodeRunError> {
-        use bevy::render::render_resource::*;
-
-        let pipeline = world.resource::<SimuPipeline>();
-        let bind_groups = world.resource::<SimuBindGroups>();
-        let pipeline_cache = world.resource::<PipelineCache>();
-
-        let mut pass = render_context
-            .command_encoder()
-            .begin_compute_pass(&ComputePassDescriptor::default());
-
-        // select the pipeline based on the current state
-        let should_dispatch = match self.state {
-            MainState::Loading => false,
-            MainState::Init => {
-                let init_pipeline = pipeline_cache
-                    .get_compute_pipeline(pipeline.init_pipeline)
-                    .unwrap();
-                pass.set_bind_group(0, &bind_groups.group_a_to_b, &[0]);
-                pass.set_pipeline(init_pipeline);
-                true
-            }
-            MainState::Update(flipped) => {
-                let update_pipeline = pipeline_cache
-                    .get_compute_pipeline(pipeline.update_pipeline)
-                    .unwrap();
-                pass.set_bind_group(
-                    0,
-                    if !flipped {
-                        &bind_groups.group_a_to_b
-                    } else {
-                        &bind_groups.group_b_to_a
-                    },
-                    &[0],
-                );
-                pass.set_pipeline(update_pipeline);
-                true
-            }
-        };
-
-        if should_dispatch {
-            pass.dispatch_workgroups(
-                TEXTURE_SIZE.0 / WORKGROUP_SIZE,
-                TEXTURE_SIZE.1 / WORKGROUP_SIZE,
-                1,
-            );
+    // select the pipeline based on the current state
+    let should_dispatch = match *state {
+        MainState::Loading => false,
+        MainState::Init => {
+            let init_pipeline = pipeline_cache
+                .get_compute_pipeline(pipeline.init_pipeline)
+                .unwrap();
+            pass.set_bind_group(0, &bind_groups.group_a_to_b, &[0]);
+            pass.set_pipeline(init_pipeline);
+            true
         }
+        MainState::Update(flipped) => {
+            let update_pipeline = pipeline_cache
+                .get_compute_pipeline(pipeline.update_pipeline)
+                .unwrap();
+            pass.set_bind_group(
+                0,
+                if !flipped {
+                    &bind_groups.group_a_to_b
+                } else {
+                    &bind_groups.group_b_to_a
+                },
+                &[0],
+            );
+            pass.set_pipeline(update_pipeline);
+            true
+        }
+    };
 
-        Ok(())
+    if should_dispatch {
+        pass.dispatch_workgroups(
+            TEXTURE_SIZE.0 / WORKGROUP_SIZE,
+            TEXTURE_SIZE.1 / WORKGROUP_SIZE,
+            1,
+        );
     }
 }

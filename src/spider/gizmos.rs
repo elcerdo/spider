@@ -8,7 +8,7 @@ use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
 
 #[cfg(feature = "debug_gizmos")]
-use bevy::scene::SceneInstanceReady;
+use bevy::world_serialization::WorldInstanceReady;
 
 use super::hits::SPIDER_HIT_RADIUS;
 use super::leg::SPIDER_LEG_LENGTH;
@@ -17,11 +17,11 @@ use bevy::color::palettes::css::*;
 
 #[cfg(feature = "debug_gizmos")]
 pub fn add_reference_axis(
-    trigger: Trigger<SceneInstanceReady>,
+    trigger: On<WorldInstanceReady>,
     mut commands: Commands,
     mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
 ) {
-    let target = trigger.target();
+    let target = trigger.entity;
     commands.entity(target).with_children(|parent| {
         let mut gizmo = GizmoAsset::new();
         gizmo.arrow(Vec3::ZERO, Vec3::X * 5.0, RED);

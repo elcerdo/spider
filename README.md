@@ -2,5 +2,5 @@
 
 ## Build instructions
 
-* Install a somewhat recent rust toolchain.
-* Use `cargo run --release` start the game.
+* Install a >1.97.0 rust toolchain.
+* Use `cargo run --release` to start the game.

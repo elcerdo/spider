@@ -4,7 +4,7 @@ use super::data::SpiderVehicle;
 
 use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
-use bevy::scene::SceneInstanceReady;
+use bevy::world_serialization::WorldInstanceReady;
 
 use bevy::color::palettes::tailwind::*;
 
@@ -15,7 +15,7 @@ const SPIDER_BULLET_DESPAWN_RADIUS: f32 = 150.0; // m
 const SPIDER_BULLET_DELAY: f64 = 20e-3; // s
 
 pub fn populate_gun(
-    trigger: Trigger<SceneInstanceReady>,
+    trigger: On<WorldInstanceReady>,
     children: Query<&Children>,
     names: Query<&Name>,
     time: Res<Time>,
@@ -25,7 +25,7 @@ pub fn populate_gun(
 ) {
     info!("** populate gun **");
 
-    let target = trigger.target();
+    let target = trigger.entity;
 
     let port_entity = {
         let re = regex::Regex::new(r"^bone_gun_forward$").unwrap();

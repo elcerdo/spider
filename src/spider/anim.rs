@@ -3,17 +3,17 @@ use super::data::SpiderGun;
 
 use bevy::prelude::*;
 
-use bevy::scene::SceneInstanceReady;
+use bevy::world_serialization::WorldInstanceReady;
 
 pub fn populate_animations(
-    trigger: Trigger<SceneInstanceReady>,
+    trigger: On<WorldInstanceReady>,
     animations: Query<&SpiderAnimation>,
     children: Query<&Children>,
     mut players: Query<&mut AnimationPlayer>,
     mut commands: Commands,
 ) {
     info!("** populate animations **");
-    let target = trigger.target();
+    let target = trigger.entity;
     if let Ok(animation) = animations.get(target) {
         for child in children.iter_descendants(target) {
             if let Ok(mut player) = players.get_mut(child) {

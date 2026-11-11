@@ -3,17 +3,17 @@ use super::data::SpiderTheme;
 use bevy::prelude::*;
 
 use bevy::math::NormedVectorSpace;
-use bevy::scene::SceneInstanceReady;
+use bevy::world_serialization::WorldInstanceReady;
 
 pub fn set_theme(
-    trigger: Trigger<SceneInstanceReady>,
+    trigger: On<WorldInstanceReady>,
     animations: Query<&SpiderTheme>,
     children: Query<&Children>,
     mut materials_: Query<&mut MeshMaterial3d<StandardMaterial>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     info!("** set theme **");
-    let target = trigger.target();
+    let target = trigger.entity;
     if let Ok(animation) = animations.get(target) {
         let material_aa = materials.add(StandardMaterial {
             base_color: animation.color_aa.into(),
