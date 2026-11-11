@@ -11,9 +11,10 @@ use super::data::SpiderVehicle;
 use super::gun::SPIDER_BULLET_HALF_LENGTH;
 
 pub const SPIDER_HIT_RADIUS: f32 = 2.0; // m
+pub const SPIDER_BODY_RADIUS: f32 = 3.5; // m
 
 #[derive(Default)]
-enum BBoxPrimitive {
+pub(crate) enum BBoxPrimitive {
     #[default]
     None,
     Bullet {
@@ -24,7 +25,14 @@ enum BBoxPrimitive {
     Vehicle {
         controller: Controller,
     },
+    WallLow {
+        entity: Entity,
+        brick_wall_size: Vec3,
+    },
 }
+
+#[derive(Resource, Default)]
+pub(crate) struct StaticPrimitives(pub Vec<BBoxPrimitive>);
 
 #[derive(Default)]
 struct BBox {
@@ -55,6 +63,11 @@ impl BBox {
                     return false;
                 }
                 if self.low.y != self.high.y {
+                    return false;
+                }
+            }
+            BBoxPrimitive::WallLow { .. } => {
+                if self.low.x > self.high.x || self.low.y > self.high.y {
                     return false;
                 }
             }
@@ -107,6 +120,99 @@ impl BBox {
         };
         assert!(ret.valid());
         ret
+    }
+
+    fn from_wall(entity: Entity, brick_wall_size: Vec3, transform: &Transform) -> Self {
+        let center = transform.translation.xz();
+        let world_half_extents = brick_wall_size.xz() * transform.scale.xz().abs() / 2.0;
+        let ret = Self {
+            low: center - world_half_extents,
+            high: center + world_half_extents,
+            primitive: BBoxPrimitive::WallLow {
+                entity,
+                brick_wall_size,
+            },
+        };
+        assert!(ret.valid());
+        ret
+    }
+
+    fn body_penetration(&self, position: Vec2) -> Option<(Vec2, f32)> {
+        let delta = position - position.clamp(self.low, self.high);
+        let distance = delta.length();
+        if distance >= SPIDER_BODY_RADIUS {
+            return None;
+        }
+        if distance > 0.0 {
+            return Some((delta / distance, SPIDER_BODY_RADIUS - distance));
+        }
+
+        // A center inside the wall must leave through its nearest face.
+        let faces = [
+            (-Vec2::X, position.x - self.low.x),
+            (Vec2::X, self.high.x - position.x),
+            (-Vec2::Y, position.y - self.low.y),
+            (Vec2::Y, self.high.y - position.y),
+        ];
+        let (normal, depth) = faces
+            .into_iter()
+            .min_by(|aa, bb| aa.1.total_cmp(&bb.1))
+            .unwrap();
+        Some((normal, SPIDER_BODY_RADIUS + depth))
+    }
+}
+
+pub fn resolve_wall_collisions(
+    primitives: Res<StaticPrimitives>,
+    walls: Query<&Transform, Without<SpiderVehicle>>,
+    mut vehicles: Query<(&mut SpiderVehicle, &mut Transform)>,
+) {
+    let wall_bboxes: Vec<_> = primitives
+        .0
+        .iter()
+        .filter_map(|primitive| {
+            let BBoxPrimitive::WallLow {
+                entity,
+                brick_wall_size,
+            } = primitive else {
+                return None;
+            };
+            let transform = walls
+                .get(*entity)
+                .expect("registered low wall must have a transform");
+            Some(BBox::from_wall(*entity, *brick_wall_size, transform))
+        })
+        .collect();
+    if wall_bboxes.is_empty() {
+        return;
+    }
+
+    for (mut vehicle, mut transform) in vehicles.iter_mut() {
+        let mut position = vehicle.position_previous;
+        let mut velocity = vehicle.position_current - position;
+        // Keep each step shorter than the body radius to avoid crossing thin walls.
+        let steps = (velocity.length() / (SPIDER_BODY_RADIUS / 2.0))
+            .ceil()
+            .max(1.0) as usize;
+        let mut step = velocity / steps as f32;
+        let mut collided = false;
+        for _ in 0..steps {
+            position += step;
+            for wall in &wall_bboxes {
+                if let Some((normal, depth)) = wall.body_penetration(position) {
+                    collided = true;
+                    position += normal * depth;
+                    step -= normal * step.dot(normal).min(0.0);
+                    velocity -= normal * velocity.dot(normal).min(0.0);
+                }
+            }
+        }
+        if collided {
+            vehicle.position_current = position;
+            vehicle.position_previous = position - velocity;
+            transform.translation.x = position.x;
+            transform.translation.z = position.y;
+        }
     }
 }
 

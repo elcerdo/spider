@@ -3,10 +3,12 @@
 mod background;
 mod global_state;
 mod material;
-#[cfg(feature = "debug_scene")]
-mod simu;
+mod obstacles;
 mod spider;
 mod ui;
+
+#[cfg(feature = "debug_scene")]
+mod simu;
 
 use bevy::prelude::*;
 
@@ -25,10 +27,12 @@ fn main() {
     app.add_plugins(background::BackgroundPlugin);
     app.add_plugins(global_state::GlobalStatePlugin);
     app.add_plugins(material::CustomMaterialPlugin);
-    #[cfg(feature = "debug_scene")]
-    app.add_plugins(simu::SimuPlugin);
+    app.add_plugins(obstacles::ObstaclePlugin);
     app.add_plugins(spider::SpiderPlugin);
     app.add_plugins(ui::UiPlugin);
+
+    #[cfg(feature = "debug_scene")]
+    app.add_plugins(simu::SimuPlugin);
 
     #[cfg(not(target_family = "wasm"))]
     {

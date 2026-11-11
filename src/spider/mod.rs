@@ -7,6 +7,8 @@ mod leg;
 mod physics;
 mod theme;
 
+pub(crate) use hits::{BBoxPrimitive, StaticPrimitives};
+
 use super::global_state::GlobalState;
 
 use bevy::prelude::*;
@@ -34,6 +36,7 @@ impl Plugin for SpiderPlugin {
                 gun::update_guns,
                 gun::spawn_bullets,
                 hits::resolve_hits,
+                hits::resolve_wall_collisions,
                 gun::despawn_far_bullets,
                 anim::update_animations,
                 gizmos::display_vehicles,
