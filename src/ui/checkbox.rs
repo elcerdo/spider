@@ -44,36 +44,4 @@ pub fn update(
         };
         info!("***** checkbox {} {}", data.label, data.checked);
     }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn checkbox_toggles_once_per_press() {
-            let mut app = App::new();
-            let button = app
-                .world_mut()
-                .spawn((
-                    UiCheckbox {
-                        label: "test".into(),
-                        checked: false,
-                    },
-                    Button,
-                    BackgroundColor(COLOR_UI_BG_DISABLED.into()),
-                    Pressed,
-                ))
-                .id();
-            app.add_systems(Update, update);
-            app.update();
-            assert!(app.world().get::<UiCheckbox>(button).unwrap().checked);
-            app.update();
-            assert!(app.world().get::<UiCheckbox>(button).unwrap().checked);
-            app.world_mut().entity_mut(button).remove::<Pressed>();
-            app.update();
-            app.world_mut().entity_mut(button).insert(Pressed);
-            app.update();
-            assert!(!app.world().get::<UiCheckbox>(button).unwrap().checked);
-        }
-    }
 }

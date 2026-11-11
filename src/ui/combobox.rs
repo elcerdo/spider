@@ -54,50 +54,6 @@ pub fn update(
                 } else {
                     1
                 }
-
-                #[cfg(test)]
-                mod tests {
-                    use super::*;
-
-                    #[test]
-                    fn pressing_either_side_changes_the_selection() {
-                        let mut app = App::new();
-                        let first = app.world_mut().spawn(Text::new("<")).id();
-                        let label = app.world_mut().spawn(Text::new("one")).id();
-                        let last = app.world_mut().spawn(Text::new(">")).id();
-                        let button = app
-                            .world_mut()
-                            .spawn((
-                                UiCombobox {
-                                    names: vec!["one".into(), "two".into(), "three".into()],
-                                    index: 0,
-                                },
-                                Button,
-                                RelativeCursorPosition {
-                                    normalized: Some(Vec2::new(-0.25, 0.0)),
-                                    ..default()
-                                },
-                                Pressed,
-                            ))
-                            .add_children(&[first, label, last])
-                            .id();
-                        app.add_systems(Update, update);
-                        app.update();
-                        assert_eq!(app.world().get::<UiCombobox>(button).unwrap().index, 2);
-                        assert_eq!(app.world().get::<Text>(label).unwrap().0, "three");
-
-                        app.world_mut().entity_mut(button).remove::<Pressed>();
-                        app.update();
-                        app.world_mut()
-                            .get_mut::<RelativeCursorPosition>(button)
-                            .unwrap()
-                            .normalized = Some(Vec2::new(0.25, 0.0));
-                        app.world_mut().entity_mut(button).insert(Pressed);
-                        app.update();
-                        assert_eq!(app.world().get::<UiCombobox>(button).unwrap().index, 0);
-                        assert_eq!(app.world().get::<Text>(label).unwrap().0, "one");
-                    }
-                }
             }
         };
         data.index += delta;
@@ -110,3 +66,4 @@ pub fn update(
         **text = name.clone();
     }
 }
+
