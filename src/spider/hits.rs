@@ -16,7 +16,7 @@ pub const SPIDER_HIT_RADIUS: f32 = 2.0; // m
 pub const SPIDER_BODY_RADIUS: f32 = 3.5; // m
 
 #[derive(Default)]
-pub(crate) enum BBoxPrimitive {
+enum BBoxPrimitive {
     #[default]
     None,
     Bullet {
