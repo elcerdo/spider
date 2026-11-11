@@ -1,6 +1,5 @@
 use crate::global_state::GlobalState;
 use crate::material::parallax_material;
-use crate::spider::{BBoxPrimitive, StaticPrimitives};
 
 use bevy::prelude::*;
 
@@ -8,21 +7,22 @@ pub struct ObstaclePlugin;
 
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<StaticPrimitives>();
         app.add_systems(OnEnter(GlobalState::Ready), populate);
         app.add_systems(OnExit(GlobalState::Ready), depopulate);
     }
 }
 
 #[derive(Component)]
-struct ObstaclesMarker;
+pub(crate) struct WallLow {
+    pub brick_wall_size: Vec3,
+}
 
-fn depopulate(
-    mut commands: Commands,
-    query: Query<Entity, With<ObstaclesMarker>>,
-    mut primitives: ResMut<StaticPrimitives>,
-) {
-    primitives.0.clear();
+#[derive(Component)]
+pub(crate) struct WallHigh {
+    pub brick_wall_size: Vec3,
+}
+
+fn depopulate(mut commands: Commands, query: Query<Entity, Or<(With<WallLow>, With<WallHigh>)>>) {
     for entity in query {
         commands.entity(entity).despawn();
     }
@@ -33,35 +33,40 @@ fn populate(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
-    mut primitives: ResMut<StaticPrimitives>,
 ) {
     let brick_wall_material =
         materials.add(parallax_material::make(&asset_server, 1.0, "brick_wall"));
-    let mut insert_low_wall = |position: Vec2, brick_wall_size: Vec3| {
-        let wall_entity = commands
-            .spawn((
-                ObstaclesMarker,
-                Mesh3d(meshes.add(make_brick_wall_mesh(brick_wall_size))),
-                MeshMaterial3d(brick_wall_material.clone()),
-                Transform::from_xyz(position.x, brick_wall_size.y / 2.0, position.y),
-            ))
-            .id();
-        primitives.0.push(BBoxPrimitive::WallLow {
-            entity: wall_entity,
-            brick_wall_size,
-        });
+
+    let mut insert_wall = |position: Vec2, brick_wall_size: Vec3, is_high: bool| {
+        let mut wall_entity = commands.spawn((
+            Mesh3d(meshes.add(make_brick_wall_mesh(brick_wall_size))),
+            MeshMaterial3d(brick_wall_material.clone()),
+            Transform::from_xyz(position.x, brick_wall_size.y / 2.0, position.y),
+        ));
+        if is_high {
+            wall_entity.insert(WallHigh { brick_wall_size });
+        } else {
+            wall_entity.insert(WallLow { brick_wall_size });
+        }
     };
 
-    insert_low_wall(Vec2::new(-4.0, 12.0), Vec3::new(10.0, 1.5, 0.5));
+    let mut insert_low_wall = |position, size| insert_wall(position, size, false);
+    insert_low_wall(Vec2::new(-8.0, 25.0), Vec3::new(10.0, 1.5, 0.5));
     insert_low_wall(Vec2::new(16.0, 12.0), Vec3::new(10.0, 1.5, 0.5));
     insert_low_wall(Vec2::new(-16.0, -12.0), Vec3::new(10.0, 1.5, 0.5));
-    insert_low_wall(Vec2::new(8.0, -16.0), Vec3::new(10.0, 1.5, 0.5));
+    insert_low_wall(Vec2::new(16.0, -28.0), Vec3::new(10.0, 1.5, 0.5));
     insert_low_wall(Vec2::new(-24.0, 6.0), Vec3::new(0.5, 1.5, 10.0));
     insert_low_wall(Vec2::new(24.0, -6.0), Vec3::new(0.5, 1.5, 10.0));
+
+    let mut insert_high_wall = |position, size| insert_wall(position, size, true);
+    insert_high_wall(Vec2::new(-4.0, 12.0), Vec3::new(12.0, 5.0, 0.5));
+    insert_high_wall(Vec2::new(8.0, -16.0), Vec3::new(0.5, 5.0, 10.0));
 }
 
 fn make_brick_wall_mesh(size: Vec3) -> Mesh {
     use bevy::mesh::VertexAttributeValues;
+
+    const BRICK_TEXTURE_TILE_SIZE: f32 = 1.5;
 
     let mut mesh = Mesh::from(Cuboid::from_size(size));
     let Some(VertexAttributeValues::Float32x3(positions)) =
@@ -93,15 +98,15 @@ fn make_brick_wall_mesh(size: Vec3) -> Mesh {
             let v = if normal[1].abs() > 0.5 {
                 if normal[1] > 0.0 {
                     // Use the upper course as a single cap row across the wall's thickness.
-                    size.y * (0.75 + 0.25 * (half_size.z - z) / size.z)
+                    BRICK_TEXTURE_TILE_SIZE * (0.75 + 0.25 * (half_size.z - z) / size.z)
                 } else {
                     z + half_size.z
                 }
             } else {
                 y + half_size.y
             };
-            // One texture tile contains four brick rows and spans the wall's height.
-            [u / size.y, v / size.y]
+            // One texture tile contains four brick rows at a fixed world-space scale.
+            [u / BRICK_TEXTURE_TILE_SIZE, v / BRICK_TEXTURE_TILE_SIZE]
         })
         .collect::<Vec<_>>();
 

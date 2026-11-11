@@ -4,6 +4,8 @@ use bevy::prelude::*;
 
 use kd_tree::{KdPoint, KdTree};
 
+use crate::obstacles::{WallHigh, WallLow};
+
 use super::data::Controller;
 use super::data::SpiderBullet;
 use super::data::SpiderVehicle;
@@ -27,12 +29,13 @@ pub(crate) enum BBoxPrimitive {
     },
     WallLow {
         entity: Entity,
-        brick_wall_size: Vec3,
+        brick_wall_size: Vec2,
+    },
+    WallHigh {
+        entity: Entity,
+        brick_wall_size: Vec2,
     },
 }
-
-#[derive(Resource, Default)]
-pub(crate) struct StaticPrimitives(pub Vec<BBoxPrimitive>);
 
 #[derive(Default)]
 struct BBox {
@@ -66,7 +69,20 @@ impl BBox {
                     return false;
                 }
             }
-            BBoxPrimitive::WallLow { .. } => {
+            BBoxPrimitive::WallLow {
+                entity,
+                brick_wall_size,
+            }
+            | BBoxPrimitive::WallHigh {
+                entity,
+                brick_wall_size,
+            } => {
+                if *entity == Entity::PLACEHOLDER
+                    || !brick_wall_size.is_finite()
+                    || !brick_wall_size.cmpgt(Vec2::ZERO).all()
+                {
+                    return false;
+                }
                 if self.low.x > self.high.x || self.low.y > self.high.y {
                     return false;
                 }
@@ -122,22 +138,34 @@ impl BBox {
         ret
     }
 
-    fn from_wall(entity: Entity, brick_wall_size: Vec3, transform: &Transform) -> Self {
-        let center = transform.translation.xz();
-        let world_half_extents = brick_wall_size.xz() * transform.scale.xz().abs() / 2.0;
-        let ret = Self {
-            low: center - world_half_extents,
-            high: center + world_half_extents,
-            primitive: BBoxPrimitive::WallLow {
+    fn from_wall(
+        entity: Entity,
+        is_high: bool,
+        brick_wall_size: Vec2,
+        transform: &Transform,
+    ) -> Self {
+        let primitive = match is_high {
+            true => BBoxPrimitive::WallHigh {
                 entity,
                 brick_wall_size,
             },
+            false => BBoxPrimitive::WallLow {
+                entity,
+                brick_wall_size,
+            },
+        };
+        let center = transform.translation.xz();
+        let world_half_extents = brick_wall_size * transform.scale.xz().abs() / 2.0;
+        let ret = Self {
+            low: center - world_half_extents,
+            high: center + world_half_extents,
+            primitive,
         };
         assert!(ret.valid());
         ret
     }
 
-    fn body_penetration(&self, position: Vec2) -> Option<(Vec2, f32)> {
+    fn intersect_vehicle(&self, position: Vec2) -> Option<(Vec2, f32)> {
         let delta = position - position.clamp(self.low, self.high);
         let distance = delta.length();
         if distance >= SPIDER_BODY_RADIUS {
@@ -160,28 +188,43 @@ impl BBox {
             .unwrap();
         Some((normal, SPIDER_BODY_RADIUS + depth))
     }
+
+    fn intersects_segment(&self, start: Vec2, end: Vec2) -> bool {
+        let direction = end - start;
+        let mut enter: f32 = 0.0;
+        let mut exit: f32 = 1.0;
+        for axis in 0..2 {
+            if direction[axis] == 0.0 {
+                if start[axis] < self.low[axis] || start[axis] > self.high[axis] {
+                    return false;
+                }
+            } else {
+                let first = (self.low[axis] - start[axis]) / direction[axis];
+                let last = (self.high[axis] - start[axis]) / direction[axis];
+                enter = enter.max(first.min(last));
+                exit = exit.min(first.max(last));
+                if enter > exit {
+                    return false;
+                }
+            }
+        }
+        true
+    }
 }
 
 pub fn resolve_wall_collisions(
-    primitives: Res<StaticPrimitives>,
-    walls: Query<&Transform, Without<SpiderVehicle>>,
+    low_walls: Query<(Entity, &Transform, &WallLow), Without<SpiderVehicle>>,
+    high_walls: Query<(Entity, &Transform, &WallHigh), Without<SpiderVehicle>>,
     mut vehicles: Query<(&mut SpiderVehicle, &mut Transform)>,
 ) {
-    let wall_bboxes: Vec<_> = primitives
-        .0
+    let wall_bboxes: Vec<_> = low_walls
         .iter()
-        .filter_map(|primitive| {
-            let BBoxPrimitive::WallLow {
-                entity,
-                brick_wall_size,
-            } = primitive else {
-                return None;
-            };
-            let transform = walls
-                .get(*entity)
-                .expect("registered low wall must have a transform");
-            Some(BBox::from_wall(*entity, *brick_wall_size, transform))
+        .map(|(entity, transform, wall)| {
+            BBox::from_wall(entity, false, wall.brick_wall_size.xz(), transform)
         })
+        .chain(high_walls.iter().map(|(entity, transform, wall)| {
+            BBox::from_wall(entity, true, wall.brick_wall_size.xz(), transform)
+        }))
         .collect();
     if wall_bboxes.is_empty() {
         return;
@@ -199,7 +242,7 @@ pub fn resolve_wall_collisions(
         for _ in 0..steps {
             position += step;
             for wall in &wall_bboxes {
-                if let Some((normal, depth)) = wall.body_penetration(position) {
+                if let Some((normal, depth)) = wall.intersect_vehicle(position) {
                     collided = true;
                     position += normal * depth;
                     step -= normal * step.dot(normal).min(0.0);
@@ -223,8 +266,8 @@ impl KdPoint for BBox {
         assert!(self.valid());
         match kk {
             0 => self.low.x,
-            1 => self.low.x,
-            2 => self.high.y,
+            1 => self.low.y,
+            2 => self.high.x,
             3 => self.high.y,
             _ => unreachable!(),
         }
@@ -235,49 +278,113 @@ fn check_intersection(aa: &BBox, bb: &BBox) -> bool {
     // FIXME impl proper segement circle intersection
     let BBoxPrimitive::Bullet {
         controller: aa_controller,
+        flip,
         ..
     } = &aa.primitive
     else {
         unreachable!()
     };
-    let aa_center = (aa.high + aa.low) / 2.0;
-    let BBoxPrimitive::Vehicle {
-        controller: bb_controller,
-    } = &bb.primitive
-    else {
-        unreachable!()
-    };
-    if aa_controller == bb_controller {
-        return false;
+    match &bb.primitive {
+        BBoxPrimitive::Vehicle {
+            controller: bb_controller,
+        } => {
+            if aa_controller == bb_controller {
+                return false;
+            }
+            assert!((bb.high - bb.low).norm() < 1e-5);
+            let aa_center = (aa.high + aa.low) / 2.0;
+            let bb_center = (bb.high + bb.low) / 2.0;
+            (bb_center - aa_center).norm() < SPIDER_HIT_RADIUS
+        }
+        BBoxPrimitive::WallHigh { .. } => {
+            let size = aa.high - aa.low;
+            let start = aa.low + *flip * size;
+            let end = aa.high - *flip * size;
+            bb.intersects_segment(start, end)
+        }
+        _ => unreachable!(),
     }
-    assert!((bb.high - bb.low).norm() < 1e-5);
-    let bb_center = (bb.high + bb.low) / 2.0;
-    (bb_center - aa_center).norm() < SPIDER_HIT_RADIUS
 }
 
-pub fn resolve_hits(
+pub fn resolve_vehicle_hits(
     mut commands: Commands,
     mut vehicles: Query<(&mut SpiderVehicle, &Transform)>,
     bullets: Query<(&SpiderBullet, &Transform, Entity)>,
+    low_walls: Query<(Entity, &Transform, &WallLow)>,
+    high_walls: Query<(Entity, &Transform, &WallHigh)>,
 ) {
-    let mut bullet_bboxes = vec![];
+    let mut bboxes = vec![];
     for (bullet, transform, entity) in bullets.iter() {
-        bullet_bboxes.push(BBox::from_bullet(
+        bboxes.push(BBox::from_bullet(
             bullet.controller.clone(),
             entity,
             &transform.translation,
             &bullet.direction,
         ));
     }
-    let bullets_kdtree = KdTree::build_by_ordered_float(bullet_bboxes);
-    // assert!(!bullets_kdtree.is_empty());
+    bboxes.extend(low_walls.iter().map(|(entity, transform, wall)| {
+        BBox::from_wall(entity, false, wall.brick_wall_size.xz(), transform)
+    }));
+    bboxes.extend(high_walls.iter().map(|(entity, transform, wall)| {
+        BBox::from_wall(entity, true, wall.brick_wall_size.xz(), transform)
+    }));
+    let kdtree = KdTree::build_by_ordered_float(bboxes);
+    let mut blocked_bullets = Vec::new();
+    for bullet_bbox in kdtree.iter() {
+        let BBoxPrimitive::Bullet { entity, .. } = &bullet_bbox.primitive else {
+            continue;
+        };
+        // Overlap requires wall.low <= bullet.high and wall.high >= bullet.low.
+        let candidates = kdtree.within(&[
+            [
+                f32::NEG_INFINITY,
+                f32::NEG_INFINITY,
+                bullet_bbox.low.x,
+                bullet_bbox.low.y,
+            ],
+            [
+                bullet_bbox.high.x,
+                bullet_bbox.high.y,
+                f32::INFINITY,
+                f32::INFINITY,
+            ],
+        ]);
+        let (_, bullet_transform, _) = bullets
+            .get(*entity)
+            .expect("indexed bullet must have a transform");
+        let blocked = candidates.into_iter().any(|wall_bbox| {
+            let BBoxPrimitive::WallHigh {
+                entity: wall_entity,
+                ..
+            } = &wall_bbox.primitive
+            else {
+                return false;
+            };
+            let (_, transform, wall) = high_walls
+                .get(*wall_entity)
+                .expect("registered high wall must have a transform");
+            let center_y = transform.translation.y;
+            let half_height = wall.brick_wall_size.y * transform.scale.y.abs() / 2.0;
+            (bullet_transform.translation.y - center_y).abs() <= half_height
+                && check_intersection(bullet_bbox, wall_bbox)
+        });
+        if blocked {
+            blocked_bullets.push(*entity);
+            commands.entity(*entity).despawn();
+        }
+    }
 
     for (mut vehicle, transform) in vehicles.iter_mut() {
         let vehicle_bbox = &BBox::from_vehicle(vehicle.controller.clone(), &transform.translation);
-        let bullet_bboxes = bullets_kdtree.within_radius(vehicle_bbox, 2.0 * SPIDER_HIT_RADIUS);
+        let bullet_bboxes = kdtree.within_radius(vehicle_bbox, 2.0 * SPIDER_HIT_RADIUS);
         let bullet_bboxes: Vec<&BBox> = bullet_bboxes
             .into_iter()
-            .filter(|bullet_bbox| check_intersection(bullet_bbox, vehicle_bbox))
+            .filter(|bullet_bbox| {
+                let BBoxPrimitive::Bullet { entity, .. } = &bullet_bbox.primitive else {
+                    return false;
+                };
+                !blocked_bullets.contains(entity) && check_intersection(bullet_bbox, vehicle_bbox)
+            })
             .collect();
         vehicle.num_hits += bullet_bboxes.len();
         bullet_bboxes.iter().for_each(|bullet_bbox| {
