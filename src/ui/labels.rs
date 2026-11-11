@@ -12,7 +12,7 @@ pub fn make(frame: &mut EntityCommands<'_>, label: &str) -> Entity {
         let mut container = parent.spawn((
             UiLabel,
             node.clone(),
-            BorderColor(COLOR_UI_FG.into()),
+            BorderColor::all(COLOR_UI_FG),
             BackgroundColor(COLOR_UI_BG.into()),
         ));
         container.with_children(|parent| {

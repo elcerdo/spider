@@ -48,7 +48,7 @@ fn populate_lights_and_cameras(mut commands: Commands, asset_server: Res<AssetSe
         BackgroundMarker,
         DirectionalLight {
             color: Color::WHITE,
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             illuminance: light_consts::lux::OVERCAST_DAY,
             ..default()
         },
@@ -79,7 +79,7 @@ fn populate_lights_and_cameras(mut commands: Commands, asset_server: Res<AssetSe
 
 fn populate_background(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<bevy::render::mesh::Mesh>>,
+    mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
     mut images: ResMut<Assets<bevy::image::Image>>,
     mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
     asset_server: Res<bevy::asset::AssetServer>,
@@ -219,7 +219,7 @@ fn move_camera(
 
 /// Creates a colorful test pattern
 fn make_uv_debug_texture() -> bevy::image::Image {
-    use bevy::render::render_asset::RenderAssetUsages;
+    use bevy::asset::RenderAssetUsages;
     use bevy::render::render_resource::Extent3d;
     use bevy::render::render_resource::TextureDimension;
     use bevy::render::render_resource::TextureFormat;
@@ -252,10 +252,10 @@ fn make_uv_debug_texture() -> bevy::image::Image {
 }
 
 #[rustfmt::skip]
-fn make_cube_mesh() -> bevy::render::mesh::Mesh {
-    use bevy::render::mesh::Indices;
-    use bevy::render::mesh::Mesh;
-    use bevy::render::render_asset::RenderAssetUsages;
+fn make_cube_mesh() -> bevy::mesh::Mesh {
+    use bevy::mesh::Indices;
+    use bevy::mesh::Mesh;
+    use bevy::asset::RenderAssetUsages;
     use bevy::render::render_resource::PrimitiveTopology;
 
     // Keep the mesh data accessible in future frames to be able to mutate it in toggle_texture.

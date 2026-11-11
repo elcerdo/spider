@@ -79,6 +79,7 @@ pub fn update_vehicles(
 
         // Compute force
         let dir_current = Vec2::from_angle(-vehicle.angle_current);
+        let strafe_left = Vec2::new(dir_current.y, -dir_current.x);
         let mut force = Vec2::ZERO;
         match vehicle.controller {
             Controller::Keyboard => {
@@ -88,16 +89,25 @@ pub fn update_vehicles(
                 if keyboard.pressed(KeyCode::ArrowDown) {
                     force -= physics.brake * dir_current;
                 }
+                if keyboard.pressed(KeyCode::PageUp) {
+                    force += physics.thrust * strafe_left;
+                }
+                if keyboard.pressed(KeyCode::PageDown) {
+                    force -= physics.thrust * strafe_left;
+                }
             }
             Controller::Gamepad => {
                 for gamepad in gamepads.iter() {
-                    let right_trigger = gamepad.get(GamepadButton::RightTrigger2).unwrap();
-                    let left_trigger = gamepad.get(GamepadButton::LeftTrigger2).unwrap();
-                    if right_trigger.abs() > 0.05 {
-                        force += physics.thrust * dir_current * right_trigger;
+                    let right_stick_y = gamepad.get(GamepadAxis::RightStickY).unwrap();
+                    if right_stick_y > 0.05 {
+                        force += physics.thrust * dir_current * right_stick_y;
                     }
-                    if left_trigger.abs() > 0.05 {
-                        force -= physics.brake * dir_current * left_trigger;
+                    if right_stick_y < -0.05 {
+                        force += physics.brake * dir_current * right_stick_y;
+                    }
+                    let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap();
+                    if right_stick_x.abs() > 0.05 {
+                        force -= physics.thrust * strafe_left * right_stick_x;
                     }
                 }
             }

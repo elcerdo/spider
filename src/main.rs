@@ -12,7 +12,7 @@ use bevy::prelude::*;
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(bevy::pbr::DirectionalLightShadowMap { size: 2048 });
+    app.insert_resource(bevy::light::DirectionalLightShadowMap { size: 2048 });
 
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
@@ -75,7 +75,7 @@ fn main() {
 
 #[cfg(not(target_family = "wasm"))]
 fn keyboard_shortcuts(
-    mut writer: EventWriter<AppExit>,
+    mut writer: MessageWriter<AppExit>,
     keyboard: Res<ButtonInput<KeyCode>>,
     state: Res<State<global_state::GlobalState>>,
 ) {

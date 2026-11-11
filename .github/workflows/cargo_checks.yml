@@ -1,0 +1,23 @@
+name: Cargo checks pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-check:
+    name: Cargo check (release, all targets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libasound2-dev libudev-dev pkg-config
+      - name: Check release targets
+        run: cargo check --release --all-targets

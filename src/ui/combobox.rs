@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use bevy::ui::RelativeCursorPosition;
+use bevy::ui::{Pressed, RelativeCursorPosition};
+use bevy::ui_widgets::Button;
 
 use super::colors::*;
 
@@ -26,9 +27,8 @@ pub fn make(frame: &mut EntityCommands<'_>, names: Vec<&str>) -> Entity {
             Button,
             RelativeCursorPosition::default(),
             node.clone(),
-            BorderColor(COLOR_UI_FG.into()),
+            BorderColor::all(COLOR_UI_FG),
             BackgroundColor(COLOR_UI_BG.into()),
-            Interaction::None,
         ));
         container.with_child((Text::new("<"), TextColor(COLOR_UI_FG.into())));
         container.with_child((Text::new(default_name), TextColor(COLOR_UI_FG.into())));
@@ -40,36 +40,30 @@ pub fn make(frame: &mut EntityCommands<'_>, names: Vec<&str>) -> Entity {
 
 pub fn update(
     mut buttons: Query<
-        (
-            &Interaction,
-            &mut UiCombobox,
-            &Children,
-            &RelativeCursorPosition,
-        ),
-        (Changed<Interaction>, With<Button>),
+        (&mut UiCombobox, &Children, &RelativeCursorPosition),
+        (Added<Pressed>, With<Button>),
     >,
     mut texts: Query<&mut Text>,
 ) {
-    for (interaction, mut data, children, relative_cursor) in buttons.iter_mut() {
-        if matches!(*interaction, Interaction::Pressed) {
-            let delta = match relative_cursor.normalized {
-                None => 1,
-                Some(pos) => {
-                    if pos.x < 0.5 {
-                        data.names.len() - 1
-                    } else {
-                        1
-                    }
+    for (mut data, children, relative_cursor) in buttons.iter_mut() {
+        let delta = match relative_cursor.normalized {
+            None => 1,
+            Some(pos) => {
+                if pos.x < 0.0 {
+                    data.names.len() - 1
+                } else {
+                    1
                 }
-            };
-            data.index += delta;
-            data.index %= data.names.len();
-            let name = data.names[data.index].clone();
-            info!("***** combobox {delta} {name}");
-            assert!(children.len() == 3);
-            let label = children[1];
-            let mut text = texts.get_mut(label).unwrap();
-            **text = name.clone();
-        }
+            }
+        };
+        data.index += delta;
+        data.index %= data.names.len();
+        let name = data.names[data.index].clone();
+        info!("***** combobox {delta} {name}");
+        assert!(children.len() == 3);
+        let label = children[1];
+        let mut text = texts.get_mut(label).unwrap();
+        **text = name.clone();
     }
 }
+

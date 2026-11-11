@@ -1,12 +1,11 @@
 use super::BackgroundMarker;
 
 use bevy::prelude::*;
-use bevy::render::{
-    mesh::{
-        Indices, PrimitiveTopology, VertexAttributeValues,
-        skinning::{SkinnedMesh, SkinnedMeshInverseBindposes},
-    },
-    render_asset::RenderAssetUsages,
+
+use bevy::asset::RenderAssetUsages;
+use bevy::mesh::{
+    Indices, PrimitiveTopology, VertexAttributeValues,
+    skinning::{SkinnedMesh, SkinnedMeshInverseBindposes},
 };
 
 use bevy::color::palettes::css::*;

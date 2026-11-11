@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use bevy::ui::RelativeCursorPosition;
+use bevy::ui::{Pressed, RelativeCursorPosition};
+use bevy::ui_widgets::Button;
 
 use super::colors::*;
 
@@ -22,9 +23,8 @@ pub fn make(frame: &mut EntityCommands<'_>, label: &str) -> Entity {
             Button,
             RelativeCursorPosition::default(),
             node.clone(),
-            BorderColor(COLOR_UI_FG.into()),
+            BorderColor::all(COLOR_UI_FG),
             BackgroundColor(COLOR_UI_BG_DISABLED.into()),
-            Interaction::None,
         ));
         container.with_child((Text::new(label), TextColor(COLOR_UI_FG.into())));
         ret = Some(container.id());
@@ -33,20 +33,15 @@ pub fn make(frame: &mut EntityCommands<'_>, label: &str) -> Entity {
 }
 
 pub fn update(
-    mut checkboxes: Query<
-        (&Interaction, &mut UiCheckbox, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut checkboxes: Query<(&mut UiCheckbox, &mut BackgroundColor), (Added<Pressed>, With<Button>)>,
 ) {
-    for (interaction, mut data, mut bg_color) in checkboxes.iter_mut() {
-        if matches!(*interaction, Interaction::Pressed) {
-            data.checked ^= true;
-            *bg_color = if data.checked {
-                COLOR_UI_BG.into()
-            } else {
-                COLOR_UI_BG_DISABLED.into()
-            };
-            info!("***** checkbox {} {}", data.label, data.checked);
-        }
+    for (mut data, mut bg_color) in checkboxes.iter_mut() {
+        data.checked ^= true;
+        *bg_color = if data.checked {
+            COLOR_UI_BG.into()
+        } else {
+            COLOR_UI_BG_DISABLED.into()
+        };
+        info!("***** checkbox {} {}", data.label, data.checked);
     }
 }
