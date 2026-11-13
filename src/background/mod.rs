@@ -2,7 +2,6 @@
 pub mod twister;
 
 use crate::global_state::GlobalState;
-use crate::material::parallax_material;
 
 use bevy::color::palettes::tailwind::*;
 use bevy::prelude::*;
@@ -112,14 +111,7 @@ fn populate_debug_scene(
         })),
         Transform::from_xyz(12.0, 0.5, -2.0),
     ));
-}
 
-fn populate_background(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
-    mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
-    asset_server: Res<bevy::asset::AssetServer>,
-) {
     // parallal
     let parallal_material = materials.add(parallax_material::make(
         &asset_server,
@@ -138,7 +130,14 @@ fn populate_background(
         MeshMaterial3d(parallal_material),
         Transform::from_xyz(3.0, 2.0, 18.0).with_scale(Vec3::ONE * 4.0),
     ));
+}
 
+fn populate_background(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
+    mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
+    asset_server: Res<bevy::asset::AssetServer>,
+) {
     // plain plane
     commands.spawn((
         Mesh3d(
