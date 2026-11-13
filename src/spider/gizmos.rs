@@ -1,7 +1,8 @@
 use super::{
     super::ui::UiState,
     data::{SpiderGun, SpiderLegs, SpiderVehicle},
-    hits::SPIDER_HIT_RADIUS,
+    hits::SPIDER_BULLET_RADIUS,
+    hits::SPIDER_WALL_RADIUS,
     leg::SPIDER_LEG_LENGTH,
     physics::lift,
 };
@@ -51,11 +52,9 @@ pub fn display_vehicles(
         return;
     }
     for vehicle in vehicles.iter() {
-        gizmos.sphere(
-            lift(vehicle.position_current),
-            SPIDER_HIT_RADIUS,
-            GREEN_YELLOW,
-        );
+        let vehicle_position = lift(vehicle.position_current);
+        gizmos.circle(vehicle_position, SPIDER_BULLET_RADIUS, GREEN_YELLOW);
+        gizmos.circle(vehicle_position, SPIDER_WALL_RADIUS, GREEN);
     }
 }
 

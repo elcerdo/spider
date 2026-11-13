@@ -33,7 +33,7 @@ impl Plugin for SpiderPlugin {
                 gun::update_bullets,
                 gun::update_guns,
                 gun::spawn_bullets,
-                hits::resolve_vehicle_hits,
+                hits::resolve_bullet_collisions,
                 hits::resolve_wall_collisions,
                 gun::despawn_far_bullets,
                 anim::update_animations,
