@@ -1,4 +1,4 @@
-use super::BackgroundMarker;
+use crate::global_state::GlobalState;
 
 use bevy::prelude::*;
 
@@ -11,8 +11,17 @@ use bevy::mesh::{
 use bevy::color::palettes::css::*;
 use std::f32::consts::PI;
 
+pub struct TwisterPlugin;
+
+impl Plugin for TwisterPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(GlobalState::Ready), populate);
+        app.add_systems(Update, animate.run_if(in_state(GlobalState::Ready)));
+    }
+}
+
 #[derive(Component)]
-pub struct AnimatedTwister;
+struct AnimatedTwister;
 
 pub fn populate(
     mut commands: Commands,
@@ -25,18 +34,10 @@ pub fn populate(
 
     // Create joint entities
     let joint_0 = commands
-        .spawn((
-            BackgroundMarker,
-            Transform::from_xyz(10.0, 0.0, -10.0),
-            // Transform::from_scale(Vec3::ONE * 5.0).with_translation(vec3(10.0, 0.0, -10.0)),
-        ))
+        .spawn((Transform::from_xyz(10.0, 0.0, -10.0),))
         .id();
     let joint_1 = commands
-        .spawn((
-            BackgroundMarker,
-            AnimatedTwister,
-            Transform::from_xyz(10.0, 10.0, -10.0),
-        ))
+        .spawn((AnimatedTwister, Transform::from_xyz(10.0, 10.0, -10.0)))
         .id();
 
     let joint_entities = vec![joint_0, joint_1];
@@ -133,12 +134,9 @@ pub fn populate(
         0, 1, 3, 0, 3, 2, 2, 3, 5, 2, 5, 4, 4, 5, 7, 4, 7, 6, 6, 7, 9, 6, 9, 8,
     ]));
 
-    let mesh = meshes.add(mesh);
-
     // Create skinned mesh renderer. Note that its transform doesn't affect the position of the mesh.
-
+    let mesh = meshes.add(mesh);
     commands.spawn((
-        BackgroundMarker,
         Mesh3d(mesh.clone()),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: WHITE_SMOKE.into(),
@@ -152,7 +150,7 @@ pub fn populate(
     ));
 }
 
-pub fn animate(
+fn animate(
     time: Res<Time>,
     mut query: Query<&mut Transform, With<AnimatedTwister>>,
     mut gizmos: Gizmos,

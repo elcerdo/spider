@@ -6,6 +6,7 @@ version = "0.1.0"
 authors = ["pierre.gueth@gmail.com"]
 
 [features]
+debug_scene = []
 debug_gizmos = []  
 
 [dependencies]

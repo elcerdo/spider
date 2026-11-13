@@ -1,7 +1,7 @@
-mod twister;
+#[cfg(feature = "debug_scene")]
+pub mod twister;
 
 use crate::global_state::GlobalState;
-use crate::material::parallax_material;
 
 use bevy::color::palettes::tailwind::*;
 use bevy::prelude::*;
@@ -21,12 +21,12 @@ impl bevy::prelude::Plugin for BackgroundPlugin {
                 (
                     populate_background,
                     populate_lights_and_cameras,
-                    twister::populate,
+                    #[cfg(feature = "debug_scene")]
+                    populate_debug_scene,
                 )
                     .chain(),
             );
             app.add_systems(OnExit(state), depopulate_background);
-            app.add_systems(Update, twister::animate.run_if(in_state(state)));
         }
     }
 }
@@ -77,7 +77,8 @@ fn populate_lights_and_cameras(mut commands: Commands, asset_server: Res<AssetSe
     ));
 }
 
-fn populate_background(
+#[cfg(feature = "debug_scene")]
+fn populate_debug_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
     mut images: ResMut<Assets<bevy::image::Image>>,
@@ -112,7 +113,11 @@ fn populate_background(
     ));
 
     // parallal
-    let parallal_material = materials.add(parallax_material::make(asset_server, 2.0));
+    let parallal_material = materials.add(parallax_material::make(
+        &asset_server,
+        2.0,
+        "parallax_example/cube",
+    ));
     commands.spawn((
         BackgroundMarker,
         Mesh3d(
@@ -125,7 +130,14 @@ fn populate_background(
         MeshMaterial3d(parallal_material),
         Transform::from_xyz(3.0, 2.0, 18.0).with_scale(Vec3::ONE * 4.0),
     ));
+}
 
+fn populate_background(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
+    mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
+    asset_server: Res<bevy::asset::AssetServer>,
+) {
     // plain plane
     commands.spawn((
         Mesh3d(
@@ -218,6 +230,7 @@ fn move_camera(
 //////////////////////////////////////////////////////////////////////
 
 /// Creates a colorful test pattern
+#[cfg(feature = "debug_scene")]
 fn make_uv_debug_texture() -> bevy::image::Image {
     use bevy::asset::RenderAssetUsages;
     use bevy::render::render_resource::Extent3d;
@@ -252,6 +265,7 @@ fn make_uv_debug_texture() -> bevy::image::Image {
 }
 
 #[rustfmt::skip]
+#[cfg(feature = "debug_scene")]
 fn make_cube_mesh() -> bevy::mesh::Mesh {
     use bevy::mesh::Indices;
     use bevy::mesh::Mesh;

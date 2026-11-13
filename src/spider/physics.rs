@@ -9,6 +9,7 @@ struct PhysicsSettings {
     mass: f32,
     friction: Vec2,
     thrust: f32,
+    strafe_thrust: f32,
     brake: f32,
     turning_speed: f32,
     dt: f32,
@@ -20,6 +21,7 @@ impl PhysicsSettings {
             mass: 100.0,                     // kg
             friction: Vec2::new(1e-2, 5e-2), // 0 <= f < 1
             thrust: 4000.0,                  // m / s^2 / kg ~ N
+            strafe_thrust: 8000.0,           // N
             brake: 4000.0,                   // m / s^2 / kg ~ N
             turning_speed: 3.5 * PI / 4.0,   // rad / s
             dt,                              // s
@@ -53,11 +55,19 @@ pub fn update_vehicles(
     time: Res<Time>,
     gamepads: Query<&Gamepad>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    camera: Single<&Transform, (With<Camera3d>, Without<SpiderVehicle>)>,
 ) {
     use super::data::Controller;
-    let physics = PhysicsSettings::from_dt(time.delta_secs());
+    let apply_deadzone = |v: Vec2| {
+        if v.length() < 0.05 { Vec2::ZERO } else { v }
+    };
+    let camera_right = camera.right();
+    let camera_right = Vec2::new(camera_right.x, camera_right.z).normalize();
+    let camera_up = Vec2::new(camera_right.y, -camera_right.x);
     for (mut vehicle, mut transform) in vehicles_and_transforms.iter_mut() {
-        // Turn main body
+        let physics = PhysicsSettings::from_dt(time.delta_secs());
+
+        // Rotation dynamics
         match vehicle.controller {
             Controller::Keyboard => {
                 if keyboard.pressed(KeyCode::ArrowLeft) {
@@ -69,15 +79,20 @@ pub fn update_vehicles(
             }
             Controller::Gamepad => {
                 for gamepad in gamepads.iter() {
-                    let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap();
-                    if left_stick_x.abs() > 0.05 {
-                        vehicle.angle_current -= physics.turning_speed * left_stick_x * physics.dt;
+                    let aim = apply_deadzone(gamepad.right_stick());
+                    if aim != Vec2::ZERO {
+                        let direction: Vec2 = camera_right * aim.x + camera_up * aim.y;
+                        let target_angle = -direction.to_angle();
+                        let angle_delta =
+                            (target_angle - vehicle.angle_current + PI).rem_euclid(2.0 * PI) - PI;
+                        let max_turn = physics.turning_speed * physics.dt;
+                        vehicle.angle_current += angle_delta.clamp(-max_turn, max_turn);
                     }
                 }
             }
         };
 
-        // Compute force
+        // Translational dynamics
         let dir_current = Vec2::from_angle(-vehicle.angle_current);
         let strafe_left = Vec2::new(dir_current.y, -dir_current.x);
         let mut force = Vec2::ZERO;
@@ -90,25 +105,18 @@ pub fn update_vehicles(
                     force -= physics.brake * dir_current;
                 }
                 if keyboard.pressed(KeyCode::PageUp) {
-                    force += physics.thrust * strafe_left;
+                    force += physics.strafe_thrust * strafe_left;
                 }
                 if keyboard.pressed(KeyCode::PageDown) {
-                    force -= physics.thrust * strafe_left;
+                    force -= physics.strafe_thrust * strafe_left;
                 }
             }
             Controller::Gamepad => {
+                // Aiming must not change movement speed or drag.
+                // physics.friction = Vec2::splat(physics.friction.x);
                 for gamepad in gamepads.iter() {
-                    let right_stick_y = gamepad.get(GamepadAxis::RightStickY).unwrap();
-                    if right_stick_y > 0.05 {
-                        force += physics.thrust * dir_current * right_stick_y;
-                    }
-                    if right_stick_y < -0.05 {
-                        force += physics.brake * dir_current * right_stick_y;
-                    }
-                    let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap();
-                    if right_stick_x.abs() > 0.05 {
-                        force -= physics.thrust * strafe_left * right_stick_x;
-                    }
+                    let movement = apply_deadzone(gamepad.left_stick());
+                    force += physics.thrust * (camera_right * movement.x + camera_up * movement.y);
                 }
             }
         };
