@@ -1,5 +1,6 @@
-mod anim;
 pub mod data;
+
+mod anim;
 mod gizmos;
 mod gun;
 mod hits;
@@ -7,7 +8,7 @@ mod leg;
 mod physics;
 mod theme;
 
-use super::global_state::GlobalState;
+use crate::global_state::GlobalState;
 
 use bevy::prelude::*;
 
@@ -32,7 +33,8 @@ impl Plugin for SpiderPlugin {
                 gun::update_bullets,
                 gun::update_guns,
                 gun::spawn_bullets,
-                hits::resolve_hits,
+                hits::resolve_bullet_collisions,
+                hits::resolve_wall_collisions,
                 gun::despawn_far_bullets,
                 anim::update_animations,
                 gizmos::display_vehicles,

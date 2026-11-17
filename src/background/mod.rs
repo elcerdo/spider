@@ -1,7 +1,7 @@
-mod twister;
+#[cfg(feature = "debug_scene")]
+pub mod twister;
 
 use crate::global_state::GlobalState;
-use crate::material::parallax_material;
 
 use bevy::color::palettes::tailwind::*;
 use bevy::prelude::*;
@@ -21,12 +21,12 @@ impl bevy::prelude::Plugin for BackgroundPlugin {
                 (
                     populate_background,
                     populate_lights_and_cameras,
-                    twister::populate,
+                    #[cfg(feature = "debug_scene")]
+                    populate_debug_scene,
                 )
                     .chain(),
             );
             app.add_systems(OnExit(state), depopulate_background);
-            app.add_systems(Update, twister::animate.run_if(in_state(state)));
         }
     }
 }
@@ -77,16 +77,15 @@ fn populate_lights_and_cameras(mut commands: Commands, asset_server: Res<AssetSe
     ));
 }
 
-fn populate_background(
+#[cfg(feature = "debug_scene")]
+fn populate_debug_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
     mut images: ResMut<Assets<bevy::image::Image>>,
     mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
     asset_server: Res<bevy::asset::AssetServer>,
 ) {
-    use bevy::prelude::*;
-
-    info!("** populate_background **");
+    info!("** populate_debug_scene **");
 
     // tower
     let debug_material = materials.add(StandardMaterial {
@@ -112,7 +111,11 @@ fn populate_background(
     ));
 
     // parallal
-    let parallal_material = materials.add(parallax_material::make(asset_server, 2.0));
+    let parallal_material = materials.add(parallax_material::make(
+        &asset_server,
+        2.0,
+        "parallax_example/cube",
+    ));
     commands.spawn((
         BackgroundMarker,
         Mesh3d(
@@ -125,6 +128,14 @@ fn populate_background(
         MeshMaterial3d(parallal_material),
         Transform::from_xyz(3.0, 2.0, 18.0).with_scale(Vec3::ONE * 4.0),
     ));
+}
+
+fn populate_background(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
+    mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
+) {
+    info!("** populate_background **");
 
     // plain plane
     commands.spawn((
@@ -149,75 +160,8 @@ fn populate_background(
 
 //////////////////////////////////////////////////////////////////////
 
-/*
-
-use bevy::prelude::*;
-
-const CAMERA_ROTATION: Quat = Quat::from_xyzw(-0.24781081, -0.2946635, -0.07941471, 0.91948706);
-const CAMERA_DATA: &[(Transform, f32)] = &[
-    (
-        Transform {
-            translation: Vec3::new(-10.0, 10.0, 14.0),
-            rotation: CAMERA_ROTATION,
-            scale: Vec3::ONE,
-        },
-        // 20 world units per pixel of window height.
-        20.0,
-    ),
-    (
-        Transform {
-            translation: Vec3::new(-18.0, 10.0, 16.0),
-            rotation: CAMERA_ROTATION,
-            scale: Vec3::ONE,
-        },
-        // 14.0 world units per pixel of window height.
-        14.0,
-    ),
-];
-
-fn move_camera(
-    mut camera_projection: Single<(&mut Transform, &mut Projection)>,
-    mut current_view: Local<usize>,
-    button: Res<ButtonInput<MouseButton>>,
-) {
-    use bevy::render::camera::OrthographicProjection;
-    use bevy::render::camera::ScalingMode;
-
-    if button.just_pressed(MouseButton::Left) {
-        *current_view = (*current_view + 1) % CAMERA_DATA.len();
-        bevy::prelude::info!("switched to camera {}", current_view.clone());
-    }
-    let target = CAMERA_DATA[*current_view];
-
-    // update transform
-    camera_projection.0.translation = camera_projection
-        .0
-        .translation
-        .lerp(target.0.translation, 0.2);
-    camera_projection.0.rotation = camera_projection.0.rotation.slerp(target.0.rotation, 0.2);
-
-    // update projection scale
-    let Projection::Orthographic(ortho_projection) = camera_projection.1.clone() else {
-        return;
-    };
-    let ScalingMode::FixedVertical {
-        mut viewport_height,
-    } = ortho_projection.scaling_mode
-    else {
-        return;
-    };
-    viewport_height = viewport_height * 0.8 + target.1 * 0.2;
-    *camera_projection.1 = Projection::from(OrthographicProjection {
-        scaling_mode: ScalingMode::FixedVertical { viewport_height },
-        ..OrthographicProjection::default_3d()
-    });
-}
-
-*/
-
-//////////////////////////////////////////////////////////////////////
-
 /// Creates a colorful test pattern
+#[cfg(feature = "debug_scene")]
 fn make_uv_debug_texture() -> bevy::image::Image {
     use bevy::asset::RenderAssetUsages;
     use bevy::render::render_resource::Extent3d;
@@ -252,6 +196,7 @@ fn make_uv_debug_texture() -> bevy::image::Image {
 }
 
 #[rustfmt::skip]
+#[cfg(feature = "debug_scene")]
 fn make_cube_mesh() -> bevy::mesh::Mesh {
     use bevy::mesh::Indices;
     use bevy::mesh::Mesh;
