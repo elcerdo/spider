@@ -52,9 +52,12 @@ pub fn display_vehicles(
         return;
     }
     for vehicle in vehicles.iter() {
-        let vehicle_position = lift(vehicle.position_current);
-        gizmos.circle(vehicle_position, SPIDER_BULLET_RADIUS, GREEN_YELLOW);
-        gizmos.circle(vehicle_position, SPIDER_WALL_RADIUS, GREEN);
+        let vehicle_isometry = Isometry3d::new(
+            lift(vehicle.position_current),
+            Quat::from_rotation_arc(Vec3::Z, Vec3::Y),
+        );
+        gizmos.circle(vehicle_isometry, SPIDER_BULLET_RADIUS, WHITE_SMOKE);
+        gizmos.circle(vehicle_isometry, SPIDER_WALL_RADIUS, LIGHT_SLATE_GREY);
     }
 }
 
