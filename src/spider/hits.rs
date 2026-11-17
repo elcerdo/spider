@@ -29,11 +29,9 @@ enum BBoxPrimitive {
     },
     WallLow {
         entity: Entity,
-        brick_wall_size: Vec2,
     },
     WallHigh {
         entity: Entity,
-        brick_wall_size: Vec2,
     },
 }
 
@@ -137,14 +135,8 @@ impl BBox {
         transform: &Transform,
     ) -> Self {
         let primitive = match is_high {
-            true => BBoxPrimitive::WallHigh {
-                entity,
-                brick_wall_size,
-            },
-            false => BBoxPrimitive::WallLow {
-                entity,
-                brick_wall_size,
-            },
+            true => BBoxPrimitive::WallHigh { entity },
+            false => BBoxPrimitive::WallLow { entity },
         };
         let center = transform.translation.xz();
         let world_half_extents = brick_wall_size * transform.scale.xz().abs() / 2.0;

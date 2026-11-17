@@ -85,9 +85,7 @@ fn populate_debug_scene(
     mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
     asset_server: Res<bevy::asset::AssetServer>,
 ) {
-    use bevy::prelude::*;
-
-    info!("** populate_background **");
+    info!("** populate_debug_scene **");
 
     // tower
     let debug_material = materials.add(StandardMaterial {
@@ -136,8 +134,9 @@ fn populate_background(
     mut commands: Commands,
     mut meshes: ResMut<Assets<bevy::mesh::Mesh>>,
     mut materials: ResMut<Assets<bevy::pbr::StandardMaterial>>,
-    asset_server: Res<bevy::asset::AssetServer>,
 ) {
+    info!("** populate_background **");
+
     // plain plane
     commands.spawn((
         Mesh3d(
@@ -158,74 +157,6 @@ fn populate_background(
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
 }
-
-//////////////////////////////////////////////////////////////////////
-
-/*
-
-use bevy::prelude::*;
-
-const CAMERA_ROTATION: Quat = Quat::from_xyzw(-0.24781081, -0.2946635, -0.07941471, 0.91948706);
-const CAMERA_DATA: &[(Transform, f32)] = &[
-    (
-        Transform {
-            translation: Vec3::new(-10.0, 10.0, 14.0),
-            rotation: CAMERA_ROTATION,
-            scale: Vec3::ONE,
-        },
-        // 20 world units per pixel of window height.
-        20.0,
-    ),
-    (
-        Transform {
-            translation: Vec3::new(-18.0, 10.0, 16.0),
-            rotation: CAMERA_ROTATION,
-            scale: Vec3::ONE,
-        },
-        // 14.0 world units per pixel of window height.
-        14.0,
-    ),
-];
-
-fn move_camera(
-    mut camera_projection: Single<(&mut Transform, &mut Projection)>,
-    mut current_view: Local<usize>,
-    button: Res<ButtonInput<MouseButton>>,
-) {
-    use bevy::render::camera::OrthographicProjection;
-    use bevy::render::camera::ScalingMode;
-
-    if button.just_pressed(MouseButton::Left) {
-        *current_view = (*current_view + 1) % CAMERA_DATA.len();
-        bevy::prelude::info!("switched to camera {}", current_view.clone());
-    }
-    let target = CAMERA_DATA[*current_view];
-
-    // update transform
-    camera_projection.0.translation = camera_projection
-        .0
-        .translation
-        .lerp(target.0.translation, 0.2);
-    camera_projection.0.rotation = camera_projection.0.rotation.slerp(target.0.rotation, 0.2);
-
-    // update projection scale
-    let Projection::Orthographic(ortho_projection) = camera_projection.1.clone() else {
-        return;
-    };
-    let ScalingMode::FixedVertical {
-        mut viewport_height,
-    } = ortho_projection.scaling_mode
-    else {
-        return;
-    };
-    viewport_height = viewport_height * 0.8 + target.1 * 0.2;
-    *camera_projection.1 = Projection::from(OrthographicProjection {
-        scaling_mode: ScalingMode::FixedVertical { viewport_height },
-        ..OrthographicProjection::default_3d()
-    });
-}
-
-*/
 
 //////////////////////////////////////////////////////////////////////
 
