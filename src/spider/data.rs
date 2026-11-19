@@ -12,10 +12,7 @@ pub enum Controller {
 pub struct SpiderVehicle {
     pub controller: Controller,
     position_initial: Vec2,
-    pub position_previous: Vec2,
-    pub position_current: Vec2,
     angle_initial: f32,
-    pub angle_current: f32,
     pub num_hits: usize,
 }
 
@@ -24,19 +21,15 @@ impl SpiderVehicle {
         Self {
             controller,
             position_initial: pos,
-            position_previous: pos,
-            position_current: pos,
             angle_initial: angle,
-            angle_current: angle,
             num_hits: 0,
         }
     }
 
-    pub fn reset(&mut self) {
-        self.position_previous = self.position_initial;
-        self.position_current = self.position_initial;
-        self.angle_current = self.angle_initial;
+    pub fn reset(&mut self) -> Transform {
         self.num_hits = 0;
+        Transform::from_translation(super::physics::lift(self.position_initial))
+            .with_rotation(Quat::from_rotation_y(self.angle_initial))
     }
 }
 
@@ -75,5 +68,6 @@ pub struct SpiderGun {
 pub struct SpiderBullet {
     pub controller: Controller,
     pub position_initial: Vec3,
+    pub position_previous: Vec3,
     pub direction: Vec3,
 }

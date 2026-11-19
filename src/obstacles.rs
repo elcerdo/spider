@@ -1,6 +1,8 @@
 use crate::global_state::GlobalState;
 use crate::material::parallax_material;
+use crate::spider::CollisionLayer;
 
+use avian3d::prelude::*;
 use bevy::prelude::*;
 
 pub struct ObstaclePlugin;
@@ -13,14 +15,10 @@ impl Plugin for ObstaclePlugin {
 }
 
 #[derive(Component)]
-pub(crate) struct WallLow {
-    pub brick_wall_size: Vec2,
-}
+pub(crate) struct WallLow;
 
 #[derive(Component)]
-pub(crate) struct WallHigh {
-    pub brick_wall_size: Vec2,
-}
+pub(crate) struct WallHigh;
 
 fn depopulate(mut commands: Commands, query: Query<Entity, Or<(With<WallLow>, With<WallHigh>)>>) {
     for entity in query {
@@ -42,12 +40,21 @@ fn populate(
             Mesh3d(meshes.add(make_brick_wall_mesh(brick_wall_size))),
             MeshMaterial3d(brick_wall_material.clone()),
             Transform::from_xyz(position.x, brick_wall_size.y / 2.0, position.y),
+            RigidBody::Static,
+            Collider::cuboid(brick_wall_size.x, brick_wall_size.y, brick_wall_size.z),
+            CollisionLayers::new(
+                if is_high {
+                    LayerMask::from([CollisionLayer::Wall, CollisionLayer::HighWall])
+                } else {
+                    LayerMask::from(CollisionLayer::Wall)
+                },
+                CollisionLayer::Vehicle,
+            ),
         ));
-        let brick_wall_size = brick_wall_size.xz();
         if is_high {
-            wall_entity.insert(WallHigh { brick_wall_size });
+            wall_entity.insert(WallHigh);
         } else {
-            wall_entity.insert(WallLow { brick_wall_size });
+            wall_entity.insert(WallLow);
         }
     };
 

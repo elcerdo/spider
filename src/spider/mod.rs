@@ -8,8 +8,11 @@ mod leg;
 mod physics;
 mod theme;
 
+pub(crate) use physics::CollisionLayer;
+
 use crate::global_state::GlobalState;
 
+use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use bevy::color::palettes::tailwind::*;
@@ -23,19 +26,31 @@ pub struct SpiderPlugin;
 
 impl Plugin for SpiderPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(PhysicsPlugins::default());
+        app.insert_resource(Gravity(Vec3::ZERO));
+        app.configure_sets(
+            FixedPostUpdate,
+            PhysicsSystems::StepSimulation.run_if(in_state(GlobalState::Ready)),
+        );
         app.add_systems(Startup, populate_spiders);
+        app.add_systems(
+            FixedUpdate,
+            physics::update_vehicles.run_if(in_state(GlobalState::Ready)),
+        );
+        app.add_systems(
+            FixedPostUpdate,
+            (hits::resolve_bullet_collisions, gun::despawn_far_bullets)
+                .chain()
+                .after(SpatialQuerySystems)
+                .run_if(in_state(GlobalState::Ready)),
+        );
         app.add_systems(
             Update,
             (
                 reset_vehicles,
-                physics::update_vehicles,
                 leg::update_legs,
-                gun::update_bullets,
                 gun::update_guns,
                 gun::spawn_bullets,
-                hits::resolve_bullet_collisions,
-                hits::resolve_wall_collisions,
-                gun::despawn_far_bullets,
                 anim::update_animations,
                 gizmos::display_vehicles,
                 gizmos::display_legs,
@@ -50,12 +65,34 @@ impl Plugin for SpiderPlugin {
 //////////////////////////////////////////////////////////////////////
 
 fn reset_vehicles(
-    mut vehicles: Query<&mut data::SpiderVehicle>,
+    mut vehicles: Query<(
+        &mut data::SpiderVehicle,
+        &mut Transform,
+        &mut Position,
+        &mut Rotation,
+        &mut LinearVelocity,
+        &mut AngularVelocity,
+        &mut ConstantForce,
+    )>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     if keyboard.just_pressed(KeyCode::KeyR) {
-        for mut vehicle in vehicles.iter_mut() {
-            vehicle.reset();
+        for (
+            mut vehicle,
+            mut transform,
+            mut position,
+            mut rotation,
+            mut velocity,
+            mut angular_velocity,
+            mut force,
+        ) in &mut vehicles
+        {
+            *transform = vehicle.reset();
+            position.0 = transform.translation.into();
+            rotation.0 = transform.rotation;
+            velocity.0 = Vec3::ZERO;
+            angular_velocity.0 = Vec3::ZERO;
+            force.0 = Vec3::ZERO;
         }
     }
 }
@@ -93,6 +130,17 @@ fn populate_spiders(
                 graph: animation_graph.clone(),
             },
             data::SpiderTheme { color_aa, color_bb },
+            Transform::from_translation(physics::lift(pos))
+                .with_rotation(Quat::from_rotation_y(angle)),
+            physics::vehicle_body(),
+        ));
+
+        let vehicle_entity = scene.id();
+        scene.with_child((
+            hits::VehicleHitbox(vehicle_entity),
+            Collider::cylinder(hits::SPIDER_BULLET_RADIUS, 1.0),
+            Sensor,
+            CollisionLayers::new(CollisionLayer::Hitbox, LayerMask::NONE),
             Transform::IDENTITY,
         ));
 

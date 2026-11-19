@@ -2,9 +2,8 @@ use super::{
     super::ui::UiState,
     data::{SpiderGun, SpiderLegs, SpiderVehicle},
     hits::SPIDER_BULLET_RADIUS,
-    hits::SPIDER_WALL_RADIUS,
     leg::SPIDER_LEG_LENGTH,
-    physics::lift,
+    physics::SPIDER_WALL_RADIUS,
 };
 use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
@@ -45,15 +44,15 @@ pub fn add_reference_axis(
 
 pub fn display_vehicles(
     ui_state: ResMut<UiState>,
-    vehicles: Query<&SpiderVehicle>,
+    vehicles: Query<&Transform, With<SpiderVehicle>>,
     mut gizmos: Gizmos,
 ) {
     if !ui_state.display_gizmos {
         return;
     }
-    for vehicle in vehicles.iter() {
+    for transform in vehicles.iter() {
         let vehicle_isometry = Isometry3d::new(
-            lift(vehicle.position_current),
+            transform.translation,
             Quat::from_rotation_arc(Vec3::Z, Vec3::Y),
         );
         gizmos.circle(vehicle_isometry, SPIDER_BULLET_RADIUS, WHITE_SMOKE);
