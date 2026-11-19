@@ -16,9 +16,8 @@ wgpu = "30.0.1"
 log = { version = "0.4.35", features = ["std"] }
 clap = { version = "4.6.7", features = ["derive"] }
 bevy = { version = "0.20.1", features = ["webgpu", "web"] }
+avian3d = { version = "0.8.0", default-features = false, features = ["3d", "parry-f32"] }
 priority-queue = "2.7.0"
-kd-tree = { version = "0.6.2", features = ["nalgebra"] }
-typenum = "1.20.1"
 regex = "1.13.1"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
